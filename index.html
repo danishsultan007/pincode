@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>pincode · your neighborhood</title>
+<meta name="description" content="Ask your neighborhood anything — no groups to join." />
+<meta name="theme-color" content="#fafaf9" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="wordmark"><span class="wm-name">pincode</span><span class="wm-sep">·</span><span class="wm-sub">your neighborhood</span></div>
+
+    <button class="loc-pill" id="locationPill" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="locationPanel">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.2A7 7 0 0 1 19 9.8C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></svg>
+      <span id="locationPillText">Locating…</span>
+      <svg class="ico ico-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+
+    <button class="btn btn-primary hide-mobile" id="askBtnHeader" type="button">+ Ask</button>
+
+    <div class="loc-panel" id="locationPanel" hidden>
+      <form id="locSearchForm" class="loc-search">
+        <input id="locSearchInput" type="text" autocomplete="off" placeholder="Pincode or area, e.g. 560048 or Hoodi" aria-label="Search pincode or area" />
+        <button class="btn btn-primary" type="submit">Go</button>
+      </form>
+      <button class="btn-text" id="useMyLocationBtn" type="button">Use my current location</button>
+      <div class="panel-row">
+        <span class="panel-label">Jump to</span>
+        <div class="chip-row">
+          <button class="chip city-chip" type="button" data-lat="12.9915" data-lng="77.6944">Mahadevapura</button>
+          <button class="chip city-chip" type="button" data-lat="12.9698" data-lng="77.7500">Whitefield</button>
+          <button class="chip city-chip" type="button" data-lat="28.6315" data-lng="77.2167">Delhi</button>
+          <button class="chip city-chip" type="button" data-lat="19.0596" data-lng="72.8295">Mumbai</button>
+          <button class="chip city-chip" type="button" data-lat="17.4483" data-lng="78.3915">Hyderabad</button>
+        </div>
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">Radius</span>
+        <div class="segmented" id="radiusOptions" role="radiogroup" aria-label="Radius">
+          <button type="button" role="radio" data-km="1">1 km</button>
+          <button type="button" role="radio" data-km="3">3 km</button>
+          <button type="button" role="radio" data-km="5">5 km</button>
+          <button type="button" role="radio" data-km="10">10 km</button>
+        </div>
+      </div>
+      <button class="btn-text btn-muted" id="resetDemoBtn" type="button">Reset demo data</button>
+    </div>
+  </div>
+</header>
+
+<div class="status-banner" id="statusBanner" hidden>
+  <div class="container status-inner">
+    <span id="statusText"></span>
+    <button class="icon-btn" id="statusDismiss" type="button" aria-label="Dismiss">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+</div>
+
+<main class="container main">
+  <button class="ask-prompt" id="askPrompt" type="button">Ask your neighborhood anything…</button>
+
+  <form class="post-search" id="postSearchForm" role="search" onsubmit="return false">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+    <input id="postSearchInput" type="search" autocomplete="off" placeholder="Search nearby — cook, carpenter, pediatrician…" aria-label="Search nearby posts" />
+    <button class="icon-btn" id="postSearchClear" type="button" aria-label="Clear search" hidden>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </form>
+
+  <div class="toolbar">
+    <div class="chip-row chips-scroll" id="filterChips" role="radiogroup" aria-label="Filter posts">
+      <button class="chip" type="button" role="radio" data-filter="all">All</button>
+      <button class="chip" type="button" role="radio" data-filter="unanswered">Unanswered</button>
+      <button class="chip" type="button" role="radio" data-filter="alerts">Alerts</button>
+      <button class="chip" type="button" role="radio" data-filter="events">Events</button>
+    </div>
+    <div class="segmented" id="viewSwitch" role="tablist" aria-label="View">
+      <button type="button" role="tab" data-view="list">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>List
+      </button>
+      <button type="button" role="tab" data-view="map">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4zM9 4v13M15 7v13"/></svg>Map
+      </button>
+    </div>
+  </div>
+
+  <section class="alerts-strip" id="alertsStrip" hidden>
+    <h2 class="strip-title"><span class="dot dot-alert"></span>Alerts near you</h2>
+    <div class="strip-list" id="alertsStripList"></div>
+  </section>
+
+  <div class="summary-row">
+    <span id="feedSummary" aria-live="polite">Loading…</span>
+    <label class="sort">
+      <span class="sr-only">Sort by</span>
+      <select id="sortSelect">
+        <option value="newest">Newest</option>
+        <option value="nearest">Nearest</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="listView">
+    <div class="feed-list" id="feedList"></div>
+    <div class="empty-state" id="emptyState" hidden></div>
+  </div>
+
+  <div id="mapView" hidden>
+    <div id="map"></div>
+  </div>
+</main>
+
+<button class="fab" id="fabAsk" type="button">+ Ask</button>
+
+<!-- Composer -->
+<div class="backdrop" id="sheetBackdrop" hidden></div>
+<div class="sheet" id="postSheet" role="dialog" aria-modal="true" aria-labelledby="composerTitle" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h2 id="composerTitle">New post</h2>
+    <button class="icon-btn" id="closeSheetBtn" type="button" aria-label="Close">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <form class="sheet-body" id="postForm" novalidate>
+    <div class="segmented segmented-full" id="typeSwitch" role="radiogroup" aria-label="Post type">
+      <button type="button" role="radio" data-type="ask">Ask</button>
+      <button type="button" role="radio" data-type="alert">Alert</button>
+      <button type="button" role="radio" data-type="event">Event</button>
+    </div>
+
+    <div id="askFields" class="field-stack">
+      <div class="field">
+        <span class="field-label">Tag <span class="optional">(optional)</span></span>
+        <div class="chip-row chip-wrap" id="tagChips"></div>
+        <input id="tagCustom" type="text" maxlength="20" placeholder="or type a tag" autocomplete="off" />
+      </div>
+      <div class="field" id="kindGroup" role="radiogroup" aria-label="Kind">
+        <label class="radio"><input type="radio" name="kind" value="request" checked /> I'm asking</label>
+        <label class="radio"><input type="radio" name="kind" value="offer" /> I'm offering</label>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Title</span>
+      <input id="postTitle" type="text" maxlength="120" autocomplete="off" />
+      <span class="field-error" id="titleError" hidden></span>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Details <span class="optional">(optional)</span></span>
+      <textarea id="postBody" rows="3" maxlength="1000"></textarea>
+    </label>
+
+    <div id="alertFields" class="field-stack" hidden>
+      <label class="field">
+        <span class="field-label">Expected until <span class="optional">(optional)</span></span>
+        <input id="postUntil" type="datetime-local" />
+        <span class="field-error" id="untilError" hidden></span>
+      </label>
+    </div>
+
+    <div id="eventFields" class="field-stack" hidden>
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Starts</span>
+          <input id="postStartsAt" type="datetime-local" />
+        </label>
+        <label class="field">
+          <span class="field-label">Ends <span class="optional">(optional)</span></span>
+          <input id="postEndsAt" type="datetime-local" />
+        </label>
+      </div>
+      <span class="field-error" id="eventError" hidden></span>
+    </div>
+
+    <label class="field" id="phoneField">
+      <span class="field-label">Phone <span class="optional">(optional — shown only when someone taps “Show number”)</span></span>
+      <input id="postPhone" type="tel" inputmode="tel" placeholder="10-digit mobile number" />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Your name</span>
+      <input id="postAuthorName" type="text" maxlength="60" autocomplete="off" />
+    </label>
+
+    <div class="field">
+      <div class="loc-row">
+        <span id="postLocText" class="loc-text"></span>
+        <button class="btn-text" id="adjustPinBtn" type="button">Adjust pin</button>
+      </div>
+      <div id="postMapWrap" hidden>
+        <div id="postMap"></div>
+        <div class="loc-readout" id="postLocReadout"></div>
+      </div>
+    </div>
+
+    <div class="sheet-footer">
+      <button class="btn btn-ghost" id="cancelPostBtn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="postSubmit" type="submit">Post ask</button>
+    </div>
+  </form>
+</div>
+
+<!-- Detail -->
+<div class="backdrop" id="detailBackdrop" hidden></div>
+<div class="sheet" id="detailSheet" role="dialog" aria-modal="true" aria-labelledby="detailTypeLabel" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h2 id="detailTypeLabel" class="type-label-lg"></h2>
+    <button class="icon-btn" id="closeDetailBtn" type="button" aria-label="Close">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body" id="detailBody"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="pincodes.js"></script>
+<script src="store.js"></script>
+<script src="geo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

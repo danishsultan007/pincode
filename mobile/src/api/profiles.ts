@@ -62,6 +62,11 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
   return data as Profile;
 }
 
+export async function acceptTerms(version: string): Promise<void> {
+  const { error } = await supabase.rpc('accept_terms', { p_version: version });
+  if (error) throw error;
+}
+
 export async function changeUsername(username: string): Promise<void> {
   const { error } = await supabase.rpc('change_username', { p_username: username });
   if (error) throw error;

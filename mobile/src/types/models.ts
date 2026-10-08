@@ -97,6 +97,8 @@ export type PrivateProfile = {
   phone_e164: string | null;
   phone_verified: boolean;
   notification_prefs: NotificationPrefs;
+  terms_accepted_at: ISODateString | null;
+  terms_version: string | null;
   created_at: ISODateString;
 };
 

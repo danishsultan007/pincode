@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
+import { TERMS_VERSION } from '@/lib/legal';
 import { colors } from '@/theme/tokens';
 
 // Root redirect (MOBILE-PLAN.md §4/§5.5):
@@ -21,6 +22,7 @@ export default function Index() {
 
   if (!session) return <Redirect href="/welcome" />;
   if (!me?.profile.onboarded_at) return <Redirect href="/onboarding" />;
+  if (me.private.terms_version !== TERMS_VERSION) return <Redirect href="/accept-terms" />;
   return <Redirect href="/(tabs)" />;
 }
 

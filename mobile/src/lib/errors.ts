@@ -19,6 +19,7 @@ export type ErrorKey =
   | 'rate_limited_messages'
   | 'rate_limited_requests'
   | 'rate_limited_reports'
+  | 'rate_limited_feedback'
   | 'self_vote'
   | 'own_post'
   | 'not_an_alert'
@@ -62,6 +63,7 @@ const MESSAGES: Record<ErrorKey, string> = {
   rate_limited_messages: "You're sending messages too fast. Try again later.",
   rate_limited_requests: "You're sending too many requests. Try again later.",
   rate_limited_reports: "You've sent a lot of reports. Try again later.",
+  rate_limited_feedback: "You've sent a lot of feedback today. Thank you — try again tomorrow.",
   self_vote: "You can't vote on your own post.",
   own_post: "You can't do that on your own post.",
   not_an_alert: 'This only applies to alerts.',

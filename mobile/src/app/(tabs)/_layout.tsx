@@ -5,6 +5,7 @@ import { Icon, IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { useInboxCounts } from '@/hooks/useInbox';
+import { TERMS_VERSION } from '@/lib/legal';
 import { colors, font } from '@/theme/tokens';
 
 // expo-router's tabBarIcon passes RN's `ColorValue` (string | OpaqueColorValue);
@@ -25,6 +26,7 @@ export default function TabsLayout() {
   if (loading || (session && meLoading)) return null;
   if (!session) return <Redirect href="/welcome" />;
   if (!me?.profile.onboarded_at) return <Redirect href="/onboarding" />;
+  if (me.private.terms_version !== TERMS_VERSION) return <Redirect href="/accept-terms" />;
 
   return (
     <RealtimeProvider>

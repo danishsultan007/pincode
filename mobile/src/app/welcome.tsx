@@ -54,12 +54,11 @@ export default function Welcome() {
           <Button label="I already have an account" variant="text" onPress={() => router.push('/sign-in')} />
         </View>
 
-        <Button
-          label={copy.auth.guidelinesLink}
-          variant="text"
-          size="sm"
-          onPress={() => router.push('/guidelines')}
-        />
+        <View style={styles.legalRow}>
+          <Button label="Terms" variant="text" size="sm" onPress={() => router.push('/terms')} />
+          <Button label="Privacy" variant="text" size="sm" onPress={() => router.push('/privacy')} />
+          <Button label="Guidelines" variant="text" size="sm" onPress={() => router.push('/guidelines')} />
+        </View>
       </View>
     </Screen>
   );
@@ -69,5 +68,6 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, justifyContent: 'space-between', paddingHorizontal: space.s5, paddingTop: space.s6, paddingBottom: space.s5 },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.s5 },
   heroText: { alignItems: 'center', gap: space.s1 },
+  legalRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
   actions: { gap: space.s3, marginBottom: space.s4, width: '100%', maxWidth: 420, alignSelf: 'center' },
 });

@@ -131,7 +131,9 @@ export default function SignUp() {
           error={confirm && confirm !== password ? "Passwords don't match" : undefined}
           onSubmitEditing={submit}
         />
-        <Text variant="meta">Next you&apos;ll pick a username.</Text>
+        <Text variant="meta">
+          Next you&apos;ll pick a username. You&apos;ll review and accept our Terms and Privacy Policy before you finish.
+        </Text>
         <Button size="lg" label="Continue" onPress={submit} loading={loading} disabled={!canSubmit} />
       </View>
     </Screen>

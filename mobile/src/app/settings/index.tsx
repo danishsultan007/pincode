@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
@@ -83,12 +84,17 @@ export default function Settings() {
       <SectionTitle title="About" />
       <ListGroup>
         <ListRow title={copy.settings.guidelines} chevron onPress={() => router.push('/guidelines')} />
+        <ListRow title={copy.settings.terms} chevron onPress={() => router.push('/terms')} />
+        <ListRow title={copy.settings.privacy} chevron onPress={() => router.push('/privacy')} />
+        <ListRow title={copy.settings.feedback} chevron onPress={() => router.push('/settings/feedback')} />
+        <ListRow title="Version" subtitle={Constants.expoConfig?.version ?? 'dev'} />
       </ListGroup>
       {me.profile.role === 'admin' ? (
         <>
           <SectionTitle title="Admin" />
           <ListGroup>
             <ListRow title={copy.settings.admin} chevron onPress={() => router.push('/admin')} />
+            <ListRow title="Feedback inbox" chevron onPress={() => router.push('/admin/feedback')} />
           </ListGroup>
         </>
       ) : null}

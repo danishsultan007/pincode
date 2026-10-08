@@ -11,15 +11,17 @@ import { AvailabilityHint, AvailabilityState } from '@/components/ui/Availabilit
 import { Chip } from '@/components/ui/Chip';
 import { ChipRow } from '@/components/ui/ChipRow';
 import { Button } from '@/components/ui/Button';
+import { TermsConsent } from '@/components/legal/TermsConsent';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { useAuth } from '@/providers/AuthProvider';
 import { useLocation } from '@/providers/LocationProvider';
 import { useToast } from '@/providers/ToastProvider';
-import { completeOnboarding, phoneAvailable, suggestUsernames, usernameAvailable } from '@/api/profiles';
+import { acceptTerms, completeOnboarding, phoneAvailable, suggestUsernames, usernameAvailable } from '@/api/profiles';
 import { isValidUsername } from '@/lib/username';
 import { normalizeIndianPhone } from '@/lib/phone';
 import { PINCODES } from '@/lib/pincodes';
 import { INTERESTS } from '@/lib/constants';
+import { TERMS_VERSION } from '@/lib/legal';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
 import { space } from '@/theme/tokens';
@@ -60,6 +62,10 @@ export default function Onboarding() {
   const [customInterest, setCustomInterest] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
+  // Consent is collected once, on the last step (covers email and Google sign-ups).
+  const alreadyAccepted = me?.private.terms_version === TERMS_VERSION;
+  const [agreed, setAgreed] = useState(false);
+  const canFinish = alreadyAccepted || agreed;
 
   const loadSuggestions = async () => {
     try {
@@ -164,6 +170,7 @@ export default function Onboarding() {
   const finish = async () => {
     setSubmitting(true);
     try {
+      if (!alreadyAccepted) await acceptTerms(TERMS_VERSION);
       await completeOnboarding({
         username: username.trim(),
         displayName: displayName.trim(),
@@ -296,7 +303,8 @@ export default function Onboarding() {
               right={<Button label="Add" size="sm" variant="text" onPress={addCustomInterest} />}
             />
 
-            <Button size="lg" label="Finish" onPress={finish} loading={submitting} />
+            {alreadyAccepted ? null : <TermsConsent checked={agreed} onChange={setAgreed} />}
+            <Button size="lg" label="Finish" onPress={finish} loading={submitting} disabled={!canFinish} />
           </View>
         ) : null}
       </View>

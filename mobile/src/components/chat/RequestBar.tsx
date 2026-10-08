@@ -30,8 +30,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: space.s2,
     padding: space.s3,
+    justifyContent: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.surface,
   },
 });

@@ -18,9 +18,9 @@ import type { PostCard as PostCardModel } from '@/types/models';
 
 export type PostCardProps = { post: PostCardModel };
 
-// Prototype card anatomy (MOBILE-PLAN.md §7.3): top row dot + label + "· tag"
-// + right "2.1 km · 3h"; title clamped to 2 lines; body clamped to 2 lines;
-// foot "area · pincode", PostStatusLine, VoteButton.
+// Card anatomy: top row type pill + tag + right "2.1 km · 3h"; title clamped
+// to 2 lines; body clamped to 2 lines; foot VoteButton, PostStatusLine,
+// "area · pincode".
 export function PostCard({ post }: PostCardProps) {
   const router = useRouter();
   const toast = useToast();
@@ -55,55 +55,59 @@ export function PostCard({ post }: PostCardProps) {
       <View style={styles.topRow}>
         <View style={styles.topLeft}>
           <TypeLabel type={post.type} kind={post.kind} />
-          {post.tag ? <Text variant="meta">· {post.tag}</Text> : null}
+          {post.tag ? (
+            <Text variant="meta" numberOfLines={1} style={styles.tag}>
+              {post.tag}
+            </Text>
+          ) : null}
         </View>
-        <Text variant="meta">
+        <Text variant="meta" numeric>
           {typeof post.distKm === 'number' ? `${fmtKm(post.distKm)} · ` : ''}
           {timeAgo(post.created_at)}
         </Text>
       </View>
 
-      {modBadge ? (
-        <View style={styles.modRow}>
-          <Badge label={modBadge.label} tone={modBadge.tone} />
-        </View>
-      ) : null}
+      {modBadge ? <Badge label={modBadge.label} tone={modBadge.tone} /> : null}
 
-      <Text variant="cardTitle" numberOfLines={2}>
-        {post.title}
-      </Text>
-      {post.community_name ? (
-        <Text variant="meta" numberOfLines={1}>
-          in {post.community_name}
+      <View style={styles.textBlock}>
+        <Text variant="cardTitle" numberOfLines={2}>
+          {post.title}
         </Text>
-      ) : null}
-      {post.body ? (
-        <Text variant="bodySm" numberOfLines={2}>
-          {post.body}
-        </Text>
-      ) : null}
+        {post.community_name ? (
+          <Text variant="meta" numberOfLines={1} style={styles.community}>
+            in {post.community_name}
+          </Text>
+        ) : null}
+        {post.body ? (
+          <Text variant="bodySm" numberOfLines={2}>
+            {post.body}
+          </Text>
+        ) : null}
+      </View>
+
       {post.image_url ? <Image source={{ uri: post.image_url }} style={styles.image} /> : null}
 
       <View style={styles.footRow}>
+        <VoteButton count={post.upvote_count} mine={post.my_vote} onPress={handleVote} />
+        <View style={styles.status}>
+          <PostStatusLine post={post} />
+        </View>
         <Text variant="meta" numberOfLines={1} style={styles.footArea}>
           {[post.area, post.pincode].filter(Boolean).join(' · ')}
         </Text>
-        <PostStatusLine post={post} />
-      </View>
-
-      <View style={styles.bottomRow}>
-        <VoteButton count={post.upvote_count} mine={post.my_vote} onPress={handleVote} />
       </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  topLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  modRow: { flexDirection: 'row', marginTop: 2 },
-  image: { width: '100%', height: 160, borderRadius: radius.md, backgroundColor: colors.surface2, marginTop: 2 },
-  footRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.s2 },
-  footArea: { flexShrink: 1 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.s2 },
+  topLeft: { flexDirection: 'row', alignItems: 'center', gap: space.s2, flexShrink: 1, minWidth: 0 },
+  tag: { flexShrink: 1 },
+  textBlock: { gap: 4 },
+  community: { color: colors.accent, fontWeight: '600' },
+  image: { width: '100%', height: 184, borderRadius: radius.md, backgroundColor: colors.surface2 },
+  footRow: { flexDirection: 'row', alignItems: 'center', gap: space.s3 },
+  status: { flex: 1, minWidth: 0 },
+  footArea: { flexShrink: 1, maxWidth: '45%', textAlign: 'right' },
 });

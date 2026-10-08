@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Stack, ThemeProvider, DarkTheme, DefaultTheme } from 'expo-router';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryProvider } from '@/providers/QueryProvider';
@@ -12,20 +13,44 @@ import { PushProvider } from '@/providers/PushProvider';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { isConfigured } from '@/lib/env';
-import { colors, space } from '@/theme/tokens';
+import { fontAssets } from '@/theme/fonts';
+import { colors, scheme, space } from '@/theme/tokens';
+
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.style.colorScheme = scheme;
+  document.body.style.backgroundColor = colors.bg;
+}
+
+const baseNavTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+const navTheme = {
+  ...baseNavTheme,
+  colors: {
+    ...baseNavTheme.colors,
+    primary: colors.accent,
+    background: colors.bg,
+    card: colors.surface,
+    text: colors.ink,
+    border: colors.line,
+    notification: colors.accent,
+  },
+};
 
 // Root layout. Provider order per MOBILE-PLAN.md §4:
 //   QueryProvider > AuthProvider > LocationProvider > ToastProvider > ActionSheetProvider > PushProvider
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
+
   return (
     <SafeAreaProvider>
+      <ThemeProvider value={navTheme}>
       <QueryProvider>
         <AuthProvider>
           <LocationProvider>
             <ToastProvider>
               <ActionSheetProvider>
                 <PushProvider>
-                  <StatusBar style="dark" />
+                  <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
                   {isConfigured ? (
                     // Modal screens (compose, location, report, community/new) register
                     // their own `presentation: 'modal'` via `Stack.Screen.options` once
@@ -54,6 +79,7 @@ export default function RootLayout() {
           </LocationProvider>
         </AuthProvider>
       </QueryProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

@@ -97,7 +97,7 @@ export default function EditProfile() {
 
   return (
     <Screen scroll>
-      <Header title="Edit profile" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
+      <Header large title="Edit profile" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
       <View style={styles.body}>
         <View style={styles.avatarRow}>
           <Avatar uri={me.profile.avatar_url} name={me.profile.display_name} size={72} />
@@ -120,14 +120,14 @@ export default function EditProfile() {
           hint={`${bio.length}/300`}
         />
 
-        <SectionTitle title="Interests" />
-        <ChipRow scroll={false}>
+        <SectionTitle flush title="Interests" />
+        <ChipRow flush scroll={false}>
           {INTERESTS.map((i) => (
             <Chip key={i} label={i} selected={interests.includes(i)} onPress={() => toggleInterest(i)} />
           ))}
         </ChipRow>
 
-        <SectionTitle title="Home area" />
+        <SectionTitle flush title="Home area" />
         <Text variant="secondary">{homeArea || 'Not set'}</Text>
         <Button
           label={copy.location.useCurrent}
@@ -139,7 +139,7 @@ export default function EditProfile() {
 
         <Button label={copy.common.save} onPress={save} loading={saving} />
 
-        <SectionTitle title="Account" />
+        <SectionTitle flush title="Account" />
         <ListRow
           title="Change username"
           subtitle={me.profile.username ? `@${me.profile.username}` : undefined}

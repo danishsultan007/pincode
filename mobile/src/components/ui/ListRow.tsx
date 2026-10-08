@@ -11,14 +11,15 @@ export type ListRowProps = {
   right?: React.ReactNode;
   onPress?: () => void;
   chevron?: boolean;
+  destructive?: boolean;
 };
 
-export function ListRow({ left, title, subtitle, right, onPress, chevron }: ListRowProps) {
+export function ListRow({ left, title, subtitle, right, onPress, chevron, destructive }: ListRowProps) {
   const content = (
     <View style={styles.row}>
       {left ? <View style={styles.left}>{left}</View> : null}
       <View style={styles.body}>
-        <Text variant="body" numberOfLines={1}>
+        <Text variant="body" numberOfLines={1} style={[styles.title, destructive ? styles.destructive : null]}>
           {title}
         </Text>
         {subtitle ? (
@@ -46,10 +47,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.s3,
     paddingHorizontal: space.s4,
-    paddingVertical: space.s3,
-    minHeight: 44,
+    paddingVertical: 14,
+    minHeight: 52,
   },
   left: { alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 2 },
+  title: { fontWeight: '500' },
+  destructive: { color: colors.danger },
   pressed: { backgroundColor: colors.surface2 },
 });

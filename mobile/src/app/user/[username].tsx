@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Segmented } from '@/components/ui/Segmented';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Divider } from '@/components/ui/Divider';
+import { Icon } from '@/components/ui/Icon';
 import { PostCard as PostCardComponent } from '@/components/post/PostCard';
 import { StatsRow } from '@/components/profile/StatsRow';
 import { BadgeList } from '@/components/profile/BadgeList';
@@ -25,7 +25,7 @@ import { supabase } from '@/lib/supabase';
 import { joinedLabel, timeAgo } from '@/lib/format';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
-import { colors, space } from '@/theme/tokens';
+import { colors, radius, shadow, space } from '@/theme/tokens';
 import { DetailState } from '@/components/ui/DetailState';
 import { goBack } from '@/lib/nav';
 
@@ -107,7 +107,9 @@ export default function PublicProfile() {
         }
       />
       <View style={styles.header}>
-        <Avatar uri={profile.avatar_url} name={profile.display_name || profile.username || '?'} size={72} />
+        <View style={styles.avatarRing}>
+          <Avatar uri={profile.avatar_url} name={profile.display_name || profile.username || '?'} size={96} />
+        </View>
         <Text variant="title">{profile.display_name}</Text>
         {profile.username ? <Text variant="secondary">@{profile.username}</Text> : null}
         {profile.is_suspended ? <Badge label={copy.profile.accountSuspended} tone="danger" /> : null}
@@ -117,7 +119,10 @@ export default function PublicProfile() {
           </Text>
         ) : null}
         {profile.home_area || profile.home_pincode ? (
-          <Text variant="meta">{[profile.home_area, profile.home_pincode].filter(Boolean).join(' · ')}</Text>
+          <View style={styles.areaRow}>
+            <Icon name="pin" size={12} color={colors.ink3} />
+            <Text variant="meta">{[profile.home_area, profile.home_pincode].filter(Boolean).join(' · ')}</Text>
+          </View>
         ) : null}
         <Text variant="meta">{joinedLabel(profile.created_at)}</Text>
 
@@ -166,7 +171,6 @@ export default function PublicProfile() {
         </>
       ) : null}
 
-      <Divider />
       <View style={styles.segmentWrap}>
         <Segmented
           options={[
@@ -194,7 +198,9 @@ export default function PublicProfile() {
           {(answers ?? []).map((a) => (
             <Pressable key={a.id} onPress={() => router.push(`/post/${a.post_id}?comment=${a.id}`)}>
               <View style={styles.answerRow}>
-                <Text variant="meta">{a.post_title}</Text>
+                <Text variant="secondary" style={styles.answerTitle}>
+                  {a.post_title}
+                </Text>
                 <Text variant="bodySm" numberOfLines={2}>
                   {a.body}
                 </Text>
@@ -213,10 +219,20 @@ export default function PublicProfile() {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', gap: space.s1, padding: space.s4 },
-  center: { textAlign: 'center' },
-  actionsRow: { flexDirection: 'row', gap: space.s2, marginTop: space.s2 },
-  segmentWrap: { paddingHorizontal: space.s4, paddingTop: space.s3 },
+  header: { alignItems: 'center', gap: 6, paddingHorizontal: space.s4, paddingTop: space.s2, paddingBottom: space.s4 },
+  avatarRing: { padding: 4, borderRadius: radius.pill, backgroundColor: colors.surface, boxShadow: shadow.card },
+  center: { textAlign: 'center', maxWidth: 480 },
+  areaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionsRow: { flexDirection: 'row', gap: space.s2, marginTop: space.s3 },
+  segmentWrap: { paddingHorizontal: space.s4, paddingTop: space.s5 },
   list: { paddingHorizontal: space.s4, paddingTop: space.s3, gap: space.s3 },
-  answerRow: { gap: 4, paddingVertical: space.s2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  answerRow: {
+    gap: 6,
+    padding: space.s4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  answerTitle: { color: colors.ink, fontWeight: '600' },
 });

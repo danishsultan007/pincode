@@ -47,7 +47,7 @@ export function TagPicker({ value, onChange }: TagPickerProps) {
 
   return (
     <View style={styles.wrap}>
-      <ChipRow scroll={false}>
+      <ChipRow flush scroll={false}>
         {TAGS.map((t) => (
           <Chip key={t.code} label={t.label} selected={value === t.code} onPress={() => onChange(t.code)} />
         ))}

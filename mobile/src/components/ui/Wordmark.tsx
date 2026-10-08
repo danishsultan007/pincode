@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import { Logo } from './Logo';
 import { copy } from '@/lib/copy';
-import { space } from '@/theme/tokens';
+import { colors, space } from '@/theme/tokens';
 
 export type WordmarkProps = { size?: 'sm' | 'lg' };
 
@@ -14,7 +14,7 @@ export function Wordmark({ size = 'sm' }: WordmarkProps) {
   const sm = size === 'sm';
   return (
     <View
-      style={[styles.row, { gap: sm ? 6 : space.s3 }]}
+      style={[styles.row, { gap: sm ? 8 : space.s3 }]}
       accessibilityRole="header"
       accessibilityLabel={`${copy.wordmark}, ${copy.tagline}`}
     >
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   // the CONTAINER shrank under the text's natural width, not the text
   // itself overflowing.
   textCol: { flexShrink: 0 },
-  nameSm: { fontSize: 17, lineHeight: 20 },
-  nameLg: { fontSize: 32, lineHeight: 36 },
-  taglineSm: { fontSize: 11, lineHeight: 14 },
+  nameSm: { fontSize: 18, lineHeight: 20 },
+  nameLg: { fontSize: 34, lineHeight: 38 },
+  taglineSm: { fontSize: 11, lineHeight: 13, color: colors.ink3 },
 });

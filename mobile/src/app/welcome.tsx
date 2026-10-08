@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
-import { Wordmark } from '@/components/ui/Wordmark';
+import { Logo } from '@/components/ui/Logo';
+import { RadarRings } from '@/components/ui/RadarRings';
+import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/providers/ToastProvider';
 import { signInWithGoogle } from '@/lib/auth';
@@ -29,8 +31,14 @@ export default function Welcome() {
   return (
     <Screen>
       <View style={styles.wrap}>
-        <View style={styles.hero}>
-          <Wordmark size="lg" />
+        <View style={styles.hero} accessible accessibilityRole="header" accessibilityLabel={`${copy.wordmark}, ${copy.tagline}`}>
+          <RadarRings size={240} pulse>
+            <Logo size={64} />
+          </RadarRings>
+          <View style={styles.heroText}>
+            <Text variant="hero">{copy.wordmark}</Text>
+            <Text variant="bodyLg">{copy.tagline}</Text>
+          </View>
         </View>
 
         <View style={styles.actions}>
@@ -38,10 +46,11 @@ export default function Welcome() {
           <Button
             label={`G   ${copy.auth.continueWithGoogle}`}
             variant="ghost"
+            size="lg"
             loading={googleLoading}
             onPress={handleGoogle}
           />
-          <Button label={copy.auth.continueWithEmail} variant="primary" onPress={() => router.push('/sign-up')} />
+          <Button label={copy.auth.continueWithEmail} variant="primary" size="lg" onPress={() => router.push('/sign-up')} />
           <Button label="I already have an account" variant="text" onPress={() => router.push('/sign-in')} />
         </View>
 
@@ -57,7 +66,8 @@ export default function Welcome() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, justifyContent: 'space-between', padding: space.s6 },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.s2 },
-  actions: { gap: space.s3, marginBottom: space.s5 },
+  wrap: { flex: 1, justifyContent: 'space-between', paddingHorizontal: space.s5, paddingTop: space.s6, paddingBottom: space.s5 },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.s5 },
+  heroText: { alignItems: 'center', gap: space.s1 },
+  actions: { gap: space.s3, marginBottom: space.s4, width: '100%', maxWidth: 420, alignSelf: 'center' },
 });

@@ -78,7 +78,7 @@ export default function ChangePhone() {
 
   return (
     <Screen scroll>
-      <Header title="Change phone" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
+      <Header large title="Change phone" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
       <View style={styles.body}>
         <Text variant="secondary">Current: {me.private.phone_e164 ?? 'Not set'}</Text>
         <TextField

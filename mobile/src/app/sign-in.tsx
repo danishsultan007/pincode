@@ -37,7 +37,7 @@ export default function SignIn() {
 
   return (
     <Screen scroll>
-      <Header title="Sign in" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
+      <Header large title="Sign in" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
       <View style={styles.form}>
         <TextField
           label="Email, username or phone"
@@ -54,7 +54,7 @@ export default function SignIn() {
           secureTextEntry
           onSubmitEditing={submit}
         />
-        <Button label="Sign in" onPress={submit} loading={loading} disabled={!canSubmit} />
+        <Button size="lg" label="Sign in" onPress={submit} loading={loading} disabled={!canSubmit} />
         <Button label={copy.auth.forgotPassword} variant="text" onPress={() => router.push('/forgot-password')} />
         <Button label="Create an account" variant="text" onPress={() => router.replace('/sign-up')} />
       </View>
@@ -63,5 +63,5 @@ export default function SignIn() {
 }
 
 const styles = StyleSheet.create({
-  form: { padding: space.s4, gap: space.s3 },
+  form: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s6, gap: space.s4, width: '100%', maxWidth: 480, alignSelf: 'center' },
 });

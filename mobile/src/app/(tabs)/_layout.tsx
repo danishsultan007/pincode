@@ -1,17 +1,17 @@
 import React from 'react';
-import type { ColorValue } from 'react-native';
+import { StyleSheet, type ColorValue } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { Icon, IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { useInboxCounts } from '@/hooks/useInbox';
-import { colors } from '@/theme/tokens';
+import { colors, font } from '@/theme/tokens';
 
 // expo-router's tabBarIcon passes RN's `ColorValue` (string | OpaqueColorValue);
 // our Icon only takes plain hex strings, which is all tokens.ts ever provides.
 function tabIcon(name: IconName) {
-  return ({ color, size }: { color: ColorValue; size: number }) => (
-    <Icon name={name} size={size} color={String(color)} />
+  return ({ color, focused }: { color: ColorValue; size: number; focused: boolean }) => (
+    <Icon name={name} size={22} color={String(color)} strokeWidth={focused ? 2.2 : 1.8} />
   );
 }
 
@@ -41,9 +41,22 @@ function TabsInner() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
+        tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.ink3,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.line,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 0,
+        },
+        tabBarLabelStyle: { fontFamily: font.semibold, fontWeight: 'normal', fontSize: 10, letterSpacing: 0 },
+        tabBarBadgeStyle: {
+          backgroundColor: colors.accent,
+          color: colors.accentInk,
+          fontFamily: font.bold,
+          fontWeight: 'normal',
+          fontSize: 10,
+        },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: tabIcon('home') }} />

@@ -13,7 +13,7 @@ export type BadgeProps = {
 const TONE_BG: Record<BadgeTone, string> = {
   neutral: colors.surface2,
   accent: colors.accentSoft,
-  warn: colors.dangerSoft,
+  warn: colors.alertSoft,
   danger: colors.dangerSoft,
 };
 
@@ -27,7 +27,7 @@ const TONE_FG: Record<BadgeTone, string> = {
 export function Badge({ label, tone = 'neutral' }: BadgeProps) {
   return (
     <View style={[styles.pill, { backgroundColor: TONE_BG[tone] }]}>
-      <Text variant="meta" style={{ color: TONE_FG[tone], fontWeight: '600' }}>
+      <Text variant="meta" style={[styles.label, { color: TONE_FG[tone] }]}>
         {label}
       </Text>
     </View>
@@ -36,9 +36,11 @@ export function Badge({ label, tone = 'neutral' }: BadgeProps) {
 
 const styles = StyleSheet.create({
   pill: {
+    height: 22,
     borderRadius: radius.pill,
     paddingHorizontal: space.s2,
-    paddingVertical: 2,
+    justifyContent: 'center',
     alignSelf: 'flex-start',
   },
+  label: { fontSize: 11, lineHeight: 14, fontWeight: '700', letterSpacing: 0.2 },
 });

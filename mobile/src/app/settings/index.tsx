@@ -6,7 +6,7 @@ import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
 import { ListRow } from '@/components/ui/ListRow';
 import { SectionTitle } from '@/components/ui/SectionTitle';
-import { Divider } from '@/components/ui/Divider';
+import { ListGroup } from '@/components/ui/ListGroup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { confirmAsync } from '@/lib/confirm';
@@ -53,49 +53,55 @@ export default function Settings() {
 
   return (
     <Screen scroll>
-      <Header title="Settings" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
+      <Header large title="Settings" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
       <SectionTitle title="Account" />
-      <ListRow
-        title="Username"
-        subtitle={me.profile.username ? `@${me.profile.username}` : 'Not set'}
-        chevron
-        onPress={() => router.push('/settings/username')}
-      />
-      <ListRow
-        title="Phone"
-        subtitle={me.private.phone_e164 ?? 'Not set'}
-        chevron
-        onPress={() => router.push('/settings/phone')}
-      />
-      <ListRow
-        title="Home area"
-        subtitle={me.profile.home_area ?? 'Not set'}
-        chevron
-        onPress={() => router.push('/profile/edit')}
-      />
-      <Divider />
+      <ListGroup>
+        <ListRow
+          title="Username"
+          subtitle={me.profile.username ? `@${me.profile.username}` : 'Not set'}
+          chevron
+          onPress={() => router.push('/settings/username')}
+        />
+        <ListRow
+          title="Phone"
+          subtitle={me.private.phone_e164 ?? 'Not set'}
+          chevron
+          onPress={() => router.push('/settings/phone')}
+        />
+        <ListRow
+          title="Home area"
+          subtitle={me.profile.home_area ?? 'Not set'}
+          chevron
+          onPress={() => router.push('/profile/edit')}
+        />
+      </ListGroup>
       <SectionTitle title="Privacy" />
-      <ListRow title="Notifications" chevron onPress={() => router.push('/settings/notifications')} />
-      <ListRow title={copy.settings.blockedUsers} chevron onPress={() => router.push('/settings/blocked')} />
-      <Divider />
+      <ListGroup>
+        <ListRow title="Notifications" chevron onPress={() => router.push('/settings/notifications')} />
+        <ListRow title={copy.settings.blockedUsers} chevron onPress={() => router.push('/settings/blocked')} />
+      </ListGroup>
       <SectionTitle title="About" />
-      <ListRow title={copy.settings.guidelines} chevron onPress={() => router.push('/guidelines')} />
+      <ListGroup>
+        <ListRow title={copy.settings.guidelines} chevron onPress={() => router.push('/guidelines')} />
+      </ListGroup>
       {me.profile.role === 'admin' ? (
         <>
-          <Divider />
           <SectionTitle title="Admin" />
-          <ListRow title={copy.settings.admin} chevron onPress={() => router.push('/admin')} />
+          <ListGroup>
+            <ListRow title={copy.settings.admin} chevron onPress={() => router.push('/admin')} />
+          </ListGroup>
         </>
       ) : null}
-      <Divider />
       <View style={styles.dangerZone}>
-        <ListRow title={copy.settings.signOut} onPress={handleSignOut} />
-        <ListRow title={copy.settings.deleteAccount} onPress={handleDelete} />
+        <ListGroup>
+          <ListRow title={copy.settings.signOut} onPress={handleSignOut} />
+          <ListRow title={copy.settings.deleteAccount} destructive onPress={handleDelete} />
+        </ListGroup>
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  dangerZone: { paddingBottom: space.s6 },
+  dangerZone: { paddingTop: space.s5, paddingBottom: space.s7 },
 });

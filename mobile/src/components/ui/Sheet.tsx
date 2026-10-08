@@ -20,7 +20,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
       <View style={styles.handle} />
       {title || onClose ? (
         <View style={styles.header}>
-          <Text variant="cardTitle" style={styles.title}>
+          <Text variant="headline" style={styles.title}>
             {title}
           </Text>
           {onClose ? <IconButton name="x" label="Close" onPress={onClose} /> : null}
@@ -34,25 +34,25 @@ export function Sheet({ title, onClose, children }: SheetProps) {
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     flex: 1,
   },
   handle: {
     alignSelf: 'center',
-    width: 36,
-    height: 4,
+    width: 40,
+    height: 5,
     borderRadius: radius.pill,
     backgroundColor: colors.lineStrong,
-    marginTop: space.s2,
+    marginTop: 10,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.s4,
-    paddingTop: space.s3,
-    paddingBottom: space.s2,
+    paddingHorizontal: space.s5,
+    paddingTop: space.s4,
+    paddingBottom: space.s3,
   },
   title: { flex: 1 },
   content: { flex: 1 },

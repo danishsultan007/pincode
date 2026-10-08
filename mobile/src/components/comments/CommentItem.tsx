@@ -54,8 +54,8 @@ export function CommentItem({
             style={styles.authorRow}
             onPress={() => comment.author_username && router.push(`/user/${comment.author_username}`)}
           >
-            <Avatar uri={comment.author_avatar_url} name={comment.author_display_name} size={20} />
-            <Text variant="secondary">{comment.author_display_name}</Text>
+            <Avatar uri={comment.author_avatar_url} name={comment.author_display_name} size={24} />
+            <Text variant="secondary" style={{ color: colors.ink, fontWeight: '600' }}>{comment.author_display_name}</Text>
           </Pressable>
           {isPostAuthor ? <Badge label="OP" /> : null}
           <Text variant="meta">· {timeAgo(comment.created_at)}</Text>
@@ -79,7 +79,7 @@ export function CommentItem({
               <Text
                 variant="secondary"
                 numeric
-                style={{ color: comment.my_vote ? colors.accent : colors.ink2, fontWeight: comment.my_vote ? '600' : '400' }}
+                style={{ color: comment.my_vote ? colors.accent : colors.ink2, fontWeight: '600' }}
               >
                 {comment.is_answer ? copy.post.helpful(comment.upvote_count) : copy.post.upvote(comment.upvote_count)}
               </Text>
@@ -103,8 +103,8 @@ export function CommentItem({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: space.s2, paddingVertical: space.s2 },
-  rail: { width: 1, backgroundColor: colors.line, marginRight: space.s2 },
+  row: { flexDirection: 'row', gap: space.s2, paddingVertical: space.s3 },
+  rail: { width: 2, borderRadius: 1, backgroundColor: colors.line, marginRight: space.s2 },
   body: { flex: 1, gap: space.s1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.s1, flexWrap: 'wrap' },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: space.s1 },
@@ -118,6 +118,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
   },
-  voteChipIdle: { backgroundColor: colors.surface, borderColor: colors.line },
-  voteChipActive: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
+  voteChipIdle: { backgroundColor: colors.surface2, borderColor: 'transparent' },
+  voteChipActive: { backgroundColor: colors.accentSoft, borderColor: 'transparent' },
 });

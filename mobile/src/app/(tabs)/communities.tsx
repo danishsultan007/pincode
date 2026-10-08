@@ -5,6 +5,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
+import { Avatar } from '@/components/ui/Avatar';
 import { Chip } from '@/components/ui/Chip';
 import { ChipRow } from '@/components/ui/ChipRow';
 import { Segmented } from '@/components/ui/Segmented';
@@ -19,7 +20,7 @@ import { messageFor } from '@/lib/errors';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
 import type { CommunityCategory } from '@/lib/constants';
 import { copy } from '@/lib/copy';
-import { colors, space } from '@/theme/tokens';
+import { colors, radius, shadow, space } from '@/theme/tokens';
 
 const DISTANCES = [2, 5, 10, 25] as const;
 type Distance = (typeof DISTANCES)[number];
@@ -64,7 +65,7 @@ export default function CommunitiesTab() {
   return (
     <Screen edges={['top']}>
       <Header
-        wordmark
+        large
         title="Communities"
         right={<IconButton name="plus" label={copy.communities.startCommunity} onPress={handleStart} />}
       />
@@ -80,7 +81,8 @@ export default function CommunitiesTab() {
             contentContainerStyle={styles.mineRow}
             renderItem={({ item }) => (
               <Pressable style={styles.mineChip} onPress={() => router.push(`/community/${item.slug}`)}>
-                <Text variant="body" numberOfLines={1}>
+                <Avatar name={item.name} size={36} shape="rounded" />
+                <Text variant="body" numberOfLines={1} style={{ fontWeight: '600' }}>
                   {item.name}
                 </Text>
                 <Text variant="meta">{copy.communities.membersCount(item.member_count)}</Text>
@@ -116,9 +118,9 @@ export default function CommunitiesTab() {
 
       {isLoading ? (
         <View style={styles.skeletons}>
-          <Skeleton height={92} />
-          <Skeleton height={92} />
-          <Skeleton height={92} />
+          <Skeleton height={84} radius={radius.lg} />
+          <Skeleton height={84} radius={radius.lg} />
+          <Skeleton height={84} radius={radius.lg} />
         </View>
       ) : (
         <FlatList
@@ -152,15 +154,16 @@ export default function CommunitiesTab() {
 
 const styles = StyleSheet.create({
   mineSection: { paddingBottom: space.s2 },
-  mineRow: { paddingHorizontal: space.s4, gap: space.s2 },
+  mineRow: { paddingHorizontal: space.s4, gap: space.s3, paddingBottom: space.s1 },
   mineChip: {
-    minWidth: 140,
+    width: 160,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     padding: space.s3,
-    gap: 2,
+    gap: 6,
     backgroundColor: colors.surface,
+    boxShadow: shadow.xs,
   },
   filterRow: {
     paddingHorizontal: space.s4,
@@ -171,6 +174,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skeletons: { paddingHorizontal: space.s4, gap: space.s3 },
-  listContent: { paddingHorizontal: space.s4, paddingBottom: space.s6 },
+  listContent: { paddingHorizontal: space.s4, paddingTop: space.s1, paddingBottom: space.s6 },
   startLink: { color: colors.accent, fontWeight: '600' },
 });

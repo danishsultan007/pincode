@@ -242,5 +242,5 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  list: { paddingVertical: space.s3, flexGrow: 1, justifyContent: 'flex-end' },
+  list: { paddingVertical: space.s3, paddingHorizontal: space.s1, flexGrow: 1, justifyContent: 'flex-end' },
 });

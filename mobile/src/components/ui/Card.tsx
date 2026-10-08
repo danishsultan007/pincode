@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, motion, radius, shadow, space } from '@/theme/tokens';
 
 export type CardVariant = 'default' | 'alert' | 'past';
 
@@ -28,7 +28,11 @@ export function Card({ onPress, variant = 'default', style, children, ...rest }:
   if (!onPress) return content;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [pressed ? styles.pressed : null]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [pressed ? styles.pressed : null]}
+    >
       {content}
     </Pressable>
   );
@@ -41,12 +45,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     padding: space.s4,
-    gap: space.s2,
+    gap: space.s3,
+    boxShadow: shadow.card,
   },
-  alert: {
-    borderLeftWidth: 2,
-    borderLeftColor: colors.alert,
-  },
-  past: { opacity: 0.8 },
-  pressed: { opacity: 0.92 },
+  alert: { backgroundColor: colors.alertTint, borderColor: colors.alertLine },
+  past: { opacity: 0.7 },
+  pressed: { transform: [{ scale: motion.pressScaleCard }], opacity: 0.96 },
 });

@@ -222,7 +222,7 @@ export default function CommunityNew() {
         <AvailabilityHint state={slugState} message={slugMessage} />
 
         <View style={styles.section}>
-          <SectionTitle title="Kind" />
+          <SectionTitle flush title="Kind" />
           <Segmented
             options={[
               { value: 'area', label: 'Area' },
@@ -235,8 +235,8 @@ export default function CommunityNew() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title="Category" />
-          <ChipRow>
+          <SectionTitle flush title="Category" />
+          <ChipRow flush>
             {COMMUNITY_CATEGORIES.map((c) => (
               <Chip key={c.code} label={c.label} selected={category === c.code} onPress={() => setCategory(c.code)} />
             ))}
@@ -246,7 +246,7 @@ export default function CommunityNew() {
         <TextField label="Description" value={description} onChangeText={setDescription} multiline maxLength={1000} />
 
         <View style={styles.section}>
-          <SectionTitle
+          <SectionTitle flush
             title={copy.communities.rules}
             right={rules.length < 10 ? <Button label="+ Add" size="sm" variant="text" onPress={handleAddRule} /> : undefined}
           />
@@ -261,7 +261,7 @@ export default function CommunityNew() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title={copy.communities.center} />
+          <SectionTitle flush title={copy.communities.center} />
           <Text variant="secondary">{[placeArea, placePincode].filter(Boolean).join(' · ')}</Text>
           <View style={styles.mapWrap}>
             <LocationPickerMap lat={pin.lat} lng={pin.lng} onChange={handlePinChange} height={220} />
@@ -269,8 +269,8 @@ export default function CommunityNew() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title={copy.communities.radius} />
-          <ChipRow scroll={false}>
+          <SectionTitle flush title={copy.communities.radius} />
+          <ChipRow flush scroll={false}>
             {RADII_CHIPS.map((r) => (
               <Chip key={r} label={`${r} km`} selected={radiusKm === r} onPress={() => setRadiusKm(r)} />
             ))}

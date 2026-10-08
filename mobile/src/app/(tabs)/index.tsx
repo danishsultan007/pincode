@@ -21,7 +21,7 @@ import { useFeed, useAlerts, useSearchFeed, FeedFilter } from '@/hooks/useFeed';
 import { DEFAULT_LOC } from '@/lib/constants';
 import { actionSheet } from '@/lib/confirm';
 import { copy } from '@/lib/copy';
-import { breakpoints, colors, radius, space } from '@/theme/tokens';
+import { breakpoints, colors, radius, shadow, space } from '@/theme/tokens';
 import type { PostsMapPoint } from '@/components/map/PostsMap.types';
 
 type ViewMode = 'list' | 'map';
@@ -125,11 +125,11 @@ export default function HomeTab() {
       hitSlop={6}
       style={[styles.locationPill, { maxWidth: wide ? 240 : 150 }]}
     >
-      <Icon name="pin" size={14} />
-      <Text variant="secondary" numberOfLines={1} style={{ flexShrink: 1 }}>
+      <Icon name="pin" size={14} color={colors.accent} />
+      <Text variant="secondary" numberOfLines={1} style={{ flexShrink: 1, color: colors.ink, fontWeight: '600' }}>
         {wide ? fullLoc : shortLoc}
       </Text>
-      <Icon name="chevron-down" size={14} />
+      <Icon name="chevron-down" size={12} color={colors.ink3} />
     </Pressable>
   );
 
@@ -156,8 +156,10 @@ export default function HomeTab() {
 
   const SortButton = () => (
     <Pressable style={styles.sortButton} hitSlop={6} onPress={openSort} accessibilityLabel={copy.feed.sortTitle}>
-      <Text variant="secondary">{currentSortLabel}</Text>
-      <Icon name="chevron-down" size={14} />
+      <Text variant="secondary" style={{ fontWeight: '600' }}>
+        {currentSortLabel}
+      </Text>
+      <Icon name="chevron-down" size={14} color={colors.ink3} />
     </Pressable>
   );
 
@@ -233,16 +235,16 @@ export default function HomeTab() {
       ) : isLoading ? (
         <View style={styles.skeletons}>
           {banners}
-          <Skeleton height={96} />
-          <Skeleton height={96} />
-          <Skeleton height={96} />
+          <Skeleton height={140} radius={radius.lg} />
+          <Skeleton height={140} radius={radius.lg} />
+          <Skeleton height={140} radius={radius.lg} />
         </View>
       ) : (
         <FeedList
           groups={isSearching ? [{ divider: null, items: activeItems }] : feed.groups}
           refreshing={feed.isRefetching}
           onRefresh={() => (isSearching ? searchResults.refetch() : feed.refetch())}
-          contentBottomInset={88}
+          contentBottomInset={104}
           ListHeaderComponent={
             <View style={{ gap: space.s3 }}>
               {banners}
@@ -273,7 +275,7 @@ export default function HomeTab() {
 
       {viewMode === 'list' ? (
         <View style={styles.fabWrap}>
-          <Button label={copy.feed.fab} icon="plus" onPress={() => router.push('/compose')} />
+          <Button label={copy.feed.fab} icon="plus" size="lg" onPress={() => router.push('/compose')} />
         </View>
       ) : null}
     </Screen>
@@ -281,41 +283,47 @@ export default function HomeTab() {
 }
 
 const styles = StyleSheet.create({
-  searchRow: { paddingHorizontal: space.s4, paddingTop: space.s2 },
+  searchRow: { paddingHorizontal: space.s4, paddingTop: space.s1 },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 32,
-    marginVertical: space.s2,
+    height: 36,
+    marginVertical: space.s3,
     paddingRight: space.s4,
     gap: space.s2,
   },
   locationPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    height: 32,
+    gap: 6,
+    height: 34,
     paddingHorizontal: space.s3,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
+    borderWidth: 0,
+    backgroundColor: colors.surface2,
     flexShrink: 1,
     minWidth: 0,
   },
-  sortButton: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 32, paddingHorizontal: space.s2 },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    height: 34,
+    paddingHorizontal: space.s3,
+    borderRadius: radius.pill,
+  },
   viewToggle: {
     flexDirection: 'row',
     backgroundColor: colors.surface2,
-    borderRadius: radius.md,
-    padding: 2,
+    borderRadius: radius.pill,
+    padding: 3,
     gap: 2,
   },
-  viewToggleBtn: { width: 32, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  viewToggleBtnActive: { backgroundColor: colors.surface },
+  viewToggleBtn: { width: 34, height: 28, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  viewToggleBtnActive: { backgroundColor: colors.raised, boxShadow: shadow.xs },
   mapBanners: { paddingHorizontal: space.s4, paddingBottom: space.s2 },
-  mapWrap: { flex: 1, marginHorizontal: space.s4, marginBottom: space.s4 },
-  hereButtonWrap: { position: 'absolute', top: space.s3, right: space.s3 },
+  mapWrap: { flex: 1, marginHorizontal: space.s4, marginBottom: space.s4, borderRadius: radius.lg, overflow: 'hidden' },
+  hereButtonWrap: { position: 'absolute', top: space.s3, right: space.s3, borderRadius: radius.pill, boxShadow: shadow.popover },
   skeletons: { paddingHorizontal: space.s4, gap: space.s3 },
-  fabWrap: { position: 'absolute', right: space.s4, bottom: space.s4 },
+  fabWrap: { position: 'absolute', right: space.s4, bottom: space.s5, borderRadius: radius.pill, boxShadow: shadow.fab },
 });

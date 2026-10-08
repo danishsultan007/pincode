@@ -23,7 +23,7 @@ export function AlertMini({ post }: AlertMiniProps) {
           {timeAgo(post.created_at)}
         </Text>
       </View>
-      <Text variant="body" numberOfLines={2}>
+      <Text variant="body" numberOfLines={2} style={{ fontWeight: '600' }}>
         {post.title}
       </Text>
     </Pressable>
@@ -32,15 +32,13 @@ export function AlertMini({ post }: AlertMiniProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    width: 220,
-    backgroundColor: colors.surface,
+    width: 240,
+    backgroundColor: colors.alertTint,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderLeftWidth: 2,
-    borderColor: colors.line,
-    borderLeftColor: colors.alert,
+    borderColor: colors.alertLine,
     padding: space.s3,
-    gap: space.s1,
+    gap: 6,
   },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.alert },

@@ -26,7 +26,7 @@ import { reverseGeocode } from '@/lib/location';
 import { normalizeIndianPhone } from '@/lib/phone';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, radius, shadow, space } from '@/theme/tokens';
 import type { PostKind, PostType } from '@/types/models';
 import { goBack } from '@/lib/nav';
 
@@ -238,16 +238,16 @@ export default function Compose() {
 
         {type === 'alert' ? (
           <View style={styles.section}>
-            <SectionTitle title="Until" />
+            <SectionTitle flush title="Until" />
             <DurationChips options={copy.compose.durationChips} value={alertDuration} onChange={setAlertDuration} />
           </View>
         ) : null}
 
         {type === 'event' ? (
           <View style={styles.section}>
-            <SectionTitle title="Starts" />
+            <SectionTitle flush title="Starts" />
             <DateTimeChips value={eventStart} onChange={setEventStart} />
-            <SectionTitle title="Duration" />
+            <SectionTitle flush title="Duration" />
             <DurationChips options={copy.compose.eventDurationChips} value={eventDuration} onChange={setEventDuration} />
           </View>
         ) : null}
@@ -256,7 +256,7 @@ export default function Compose() {
         <TextField label="Details" value={body} onChangeText={setBody} multiline maxLength={2000} />
 
         <View style={styles.section}>
-          <SectionTitle title="Photo or GIF (optional)" />
+          <SectionTitle flush title="Photo or GIF (optional)" />
           {imageUrl ? (
             <View style={styles.imagePreviewWrap}>
               <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
@@ -291,7 +291,7 @@ export default function Compose() {
         ) : null}
 
         <View style={styles.section}>
-          <SectionTitle
+          <SectionTitle flush
             title="Location"
             right={
               <Button
@@ -312,8 +312,8 @@ export default function Compose() {
 
         {!isEdit && myCommunitiesList && myCommunitiesList.length > 0 ? (
           <View style={styles.section}>
-            <SectionTitle title={copy.communities.communityOptional} />
-            <ChipRow>
+            <SectionTitle flush title={copy.communities.communityOptional} />
+            <ChipRow flush>
               <Chip label={copy.communities.none} selected={!communityId} onPress={() => setCommunityId(null)} />
               {myCommunitiesList.map((c) => (
                 <Chip key={c.id} label={c.name} selected={communityId === c.id} onPress={() => setCommunityId(c.id)} />
@@ -322,25 +322,24 @@ export default function Compose() {
           </View>
         ) : null}
 
-        <Button label={submitLabel} onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />
+        <Button size="lg" label={submitLabel} onPress={handleSubmit} loading={submitting} disabled={!canSubmit} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { padding: space.s4, gap: space.s3 },
+  body: { padding: space.s4, gap: space.s4 },
   section: { gap: space.s2 },
-  mapWrap: { height: 220 },
+  mapWrap: { height: 220, borderRadius: radius.lg, overflow: 'hidden' },
   imagePreviewWrap: { alignSelf: 'flex-start' },
-  imagePreview: { width: 160, height: 160, borderRadius: radius.md, backgroundColor: colors.surface2 },
+  imagePreview: { width: 180, height: 180, borderRadius: radius.lg, backgroundColor: colors.surface2 },
   imageRemoveBtn: {
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.surface,
     borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
+    boxShadow: shadow.xs,
   },
 });

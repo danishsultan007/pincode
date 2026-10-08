@@ -11,7 +11,7 @@ export type MessageBubbleProps = {
   mine: boolean;
 };
 
-// Chat message bubble (MOBILE-PLAN.md §4 Chat): mine right in accentSoft,
+// Chat message bubble (MOBILE-PLAN.md §4 Chat): mine right in accent,
 // theirs left in surface. A system message (is_system, sender_id null, from
 // the "pincode Team" conversation) renders full-width, centered, no bubble
 // side. A held message (mod_status !== 'visible') still renders for its own
@@ -37,10 +37,13 @@ export function MessageBubble({ message, mine }: MessageBubbleProps) {
   return (
     <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
       <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-        <Text variant="body" style={held ? styles.heldText : undefined}>
+        <Text
+          variant="body"
+          style={[mine ? styles.textMine : null, held ? (mine ? styles.heldMine : styles.heldText) : null]}
+        >
           {held ? copy.chat.heldForReview : message.body}
         </Text>
-        <Text variant="meta" style={styles.time}>
+        <Text variant="meta" style={mine ? styles.timeMine : styles.time}>
           {fmtTime(message.created_at)}
         </Text>
       </View>
@@ -49,20 +52,22 @@ export function MessageBubble({ message, mine }: MessageBubbleProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', paddingHorizontal: space.s3, paddingVertical: 3 },
+  row: { flexDirection: 'row', paddingHorizontal: space.s3, paddingVertical: 2 },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },
-  bubble: {
-    maxWidth: '78%',
-    borderRadius: radius.lg,
-    paddingHorizontal: space.s3,
-    paddingVertical: space.s2,
-    gap: 2,
+  bubble: { maxWidth: '80%', borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 9, gap: 2 },
+  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: radius.xs },
+  bubbleTheirs: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderBottomLeftRadius: radius.xs,
   },
-  bubbleMine: { backgroundColor: colors.accentSoft, borderBottomRightRadius: 4 },
-  bubbleTheirs: { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
+  textMine: { color: colors.accentInk },
+  timeMine: { alignSelf: 'flex-end', color: colors.accentInk, opacity: 0.72 },
   time: { alignSelf: 'flex-end', color: colors.ink3 },
   heldText: { color: colors.ink3, fontStyle: 'italic' },
+  heldMine: { color: colors.accentInk, opacity: 0.8, fontStyle: 'italic' },
   systemWrap: { alignItems: 'center', paddingHorizontal: space.s4, paddingVertical: 4 },
   systemBubble: {
     maxWidth: '90%',

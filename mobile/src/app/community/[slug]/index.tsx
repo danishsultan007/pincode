@@ -28,7 +28,7 @@ import {
 import { actionSheet } from '@/lib/confirm';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 import { DetailState } from '@/components/ui/DetailState';
 import { goBack } from '@/lib/nav';
 
@@ -132,8 +132,8 @@ export default function CommunityPage() {
           </View>
           {posts.isLoading ? (
             <View style={styles.skeletons}>
-              <Skeleton height={96} />
-              <Skeleton height={96} />
+              <Skeleton height={96} radius={radius.lg} />
+              <Skeleton height={96} radius={radius.lg} />
             </View>
           ) : (
             <FeedList
@@ -215,6 +215,6 @@ const styles = StyleSheet.create({
   skeletons: { paddingHorizontal: space.s4, gap: space.s3 },
   aboutContent: { padding: space.s4, gap: space.s4, paddingBottom: space.s6 },
   section: { gap: space.s1 },
-  mapWrap: { height: 160 },
+  mapWrap: { height: 160, borderRadius: radius.lg, overflow: 'hidden' },
   membersContent: { paddingBottom: space.s6 },
 });

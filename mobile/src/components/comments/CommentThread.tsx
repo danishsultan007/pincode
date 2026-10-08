@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
 import { CommentItem } from '@/components/comments/CommentItem';
 import { copy } from '@/lib/copy';
-import { colors, space } from '@/theme/tokens';
+import { colors, radius, space } from '@/theme/tokens';
 import type { ReactionCode } from '@/lib/constants';
 import type { CommentCard, CommentNode } from '@/types/models';
 
@@ -130,5 +130,5 @@ function countDescendants(node: CommentNode): number {
 
 const styles = StyleSheet.create({
   continueLink: { paddingVertical: space.s2 },
-  highlight: { backgroundColor: colors.accentSoft, borderRadius: 8 },
+  highlight: { backgroundColor: colors.accentTint, borderRadius: radius.md, paddingHorizontal: space.s2 },
 });

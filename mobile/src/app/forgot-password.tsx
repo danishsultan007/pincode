@@ -34,6 +34,7 @@ export default function ForgotPassword() {
   return (
     <Screen scroll>
       <Header
+        large
         title="Forgot password"
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />
@@ -50,7 +51,7 @@ export default function ForgotPassword() {
               autoCapitalize="none"
               onSubmitEditing={submit}
             />
-            <Button label="Send reset link" onPress={submit} loading={loading} disabled={!email} />
+            <Button size="lg" label="Send reset link" onPress={submit} loading={loading} disabled={!email} />
           </>
         )}
       </View>
@@ -59,5 +60,5 @@ export default function ForgotPassword() {
 }
 
 const styles = StyleSheet.create({
-  form: { padding: space.s4, gap: space.s3 },
+  form: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s6, gap: space.s4, width: '100%', maxWidth: 480, alignSelf: 'center' },
 });

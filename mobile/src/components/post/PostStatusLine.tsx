@@ -14,7 +14,7 @@ export function PostStatusLine({ post }: PostStatusLineProps) {
   if (post.type === 'event') {
     if (!post.starts_at) return null;
     return (
-      <Text variant="secondary" style={styles.neutral}>
+      <Text variant="secondary" numberOfLines={1} style={styles.neutral}>
         {fmtWhen(post.starts_at)}
       </Text>
     );
@@ -23,13 +23,13 @@ export function PostStatusLine({ post }: PostStatusLineProps) {
   if (post.type === 'alert') {
     if (post.still_on_count > 0) {
       return (
-        <Text variant="secondary" style={styles.neutral}>
+        <Text variant="secondary" numberOfLines={1} style={styles.neutral}>
           {copy.post.stillOnConfirmed(post.still_on_count, post.last_confirmed_at ? `${relAge(post.last_confirmed_at)} ago` : '')}
         </Text>
       );
     }
     return (
-      <Text variant="secondary" style={styles.neutral}>
+      <Text variant="secondary" numberOfLines={1} style={styles.neutral}>
         {copy.post.until(fmtTime(post.expires_at))}
       </Text>
     );
@@ -40,8 +40,8 @@ export function PostStatusLine({ post }: PostStatusLineProps) {
     const mins = Math.max(1, Math.round((new Date(post.solved_at ?? post.first_answer_at).getTime() - new Date(post.created_at).getTime()) / 60000));
     return (
       <View style={styles.row}>
-        <Icon name="check" size={14} color={colors.accent} />
-        <Text variant="secondary" style={styles.accent}>
+        <Icon name="check" size={14} color={colors.success} />
+        <Text variant="secondary" numberOfLines={1} style={styles.success}>
           {copy.post.answeredIn(mins)}
         </Text>
       </View>
@@ -49,14 +49,14 @@ export function PostStatusLine({ post }: PostStatusLineProps) {
   }
   if (post.answer_count > 0) {
     return (
-      <Text variant="secondary" style={styles.neutral}>
+      <Text variant="secondary" numberOfLines={1} style={styles.neutral}>
         {copy.post.answersCount(post.answer_count)}
       </Text>
     );
   }
   if (post.kind === 'request') {
     return (
-      <Text variant="secondary" style={styles.accent}>
+      <Text variant="secondary" numberOfLines={1} style={styles.accent}>
         {copy.post.noAnswersYet}
       </Text>
     );
@@ -65,7 +65,8 @@ export function PostStatusLine({ post }: PostStatusLineProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.s1 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.s1, minWidth: 0 },
   neutral: {},
-  accent: { color: colors.accent },
+  accent: { color: colors.accent, fontWeight: '600' },
+  success: { color: colors.success, fontWeight: '600', flexShrink: 1 },
 });

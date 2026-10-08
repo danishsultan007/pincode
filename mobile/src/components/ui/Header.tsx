@@ -13,6 +13,7 @@ export type HeaderProps = {
   center?: React.ReactNode;
   right?: React.ReactNode;
   wordmark?: boolean;
+  large?: boolean;
 };
 
 // wordmark = lockup pinned left-most, right after `left` (a back button, or
@@ -26,7 +27,25 @@ export type HeaderProps = {
 // logo (that made it drift right, off-center from the form below it). It's
 // laid over the row with `position: absolute` so `left` + the logo's width
 // don't shift its center point at all.
-export function Header({ title, left, center, right, wordmark }: HeaderProps) {
+export function Header({ title, left, center, right, wordmark, large }: HeaderProps) {
+  if (large && title) {
+    return (
+      <View style={styles.largeWrap}>
+        {left ? (
+          <View style={styles.largeTopRow}>
+            <View style={styles.side}>{left}</View>
+            <View style={[styles.side, styles.sideRight]}>{right}</View>
+          </View>
+        ) : null}
+        <View style={[styles.largeTitleRow, !left && styles.largeTitleRowSolo]}>
+          <Text variant="display" numberOfLines={1} accessibilityRole="header" style={styles.largeTitle}>
+            {title}
+          </Text>
+          {!left && right ? <View style={styles.actions}>{right}</View> : null}
+        </View>
+      </View>
+    );
+  }
   if (wordmark) {
     return (
       <View style={styles.row}>
@@ -72,13 +91,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    paddingHorizontal: space.s4,
+    height: 56,
+    paddingHorizontal: space.s3,
     backgroundColor: colors.bg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.line,
     position: 'relative',
   },
+  largeWrap: { backgroundColor: colors.bg, paddingBottom: space.s2 },
+  largeTopRow: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.s3 },
+  largeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: space.s3, paddingHorizontal: space.s4, minHeight: 44 },
+  largeTitleRowSolo: { paddingTop: space.s4 },
+  largeTitle: { flex: 1, minWidth: 0 },
   side: { minWidth: 32, flexDirection: 'row', alignItems: 'center' },
   sideRight: { justifyContent: 'flex-end' },
   center: { flex: 1, alignItems: 'center' },

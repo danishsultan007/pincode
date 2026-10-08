@@ -47,6 +47,7 @@ import { messageFor } from '@/lib/errors';
 import { actionSheet, confirmAsync } from '@/lib/confirm';
 import { copy } from '@/lib/copy';
 import { colors, radius, space } from '@/theme/tokens';
+import { Icon } from '@/components/ui/Icon';
 import type { ReactionCode } from '@/lib/constants';
 import type { CommentCard } from '@/types/models';
 import { DetailState } from '@/components/ui/DetailState';
@@ -302,7 +303,7 @@ export default function PostDetail() {
         </View>
         {post.community_name && post.community_slug ? (
           <Pressable onPress={() => router.push(`/community/${post.community_slug}`)}>
-            <Text variant="secondary" style={{ color: colors.accent }}>
+            <Text variant="secondary" style={{ color: colors.accent, fontWeight: '600' }}>
               in {post.community_name}
             </Text>
           </Pressable>
@@ -332,11 +333,13 @@ export default function PostDetail() {
           style={styles.authorRow}
           onPress={() => post.author_username && router.push(`/user/${post.author_username}`)}
         >
-          <Avatar uri={post.author_avatar_url} name={post.author_display_name} size={32} />
+          <Avatar uri={post.author_avatar_url} name={post.author_display_name} size={40} />
           <View>
-            <Text variant="body">{post.author_display_name}</Text>
+            <Text variant="body" style={{ fontWeight: '600' }}>{post.author_display_name}</Text>
             {post.author_username ? <Text variant="meta">@{post.author_username}</Text> : null}
           </View>
+          <View style={{ flex: 1 }} />
+          <Icon name="chevron-right" size={16} color={colors.ink3} />
         </Pressable>
 
         <View style={styles.actionRow}>
@@ -420,11 +423,20 @@ function SectionHeader({ count, type }: { count: number; type: 'ask' | 'alert' |
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { padding: space.s4, gap: space.s3, paddingBottom: space.s6 },
-  image: { width: '100%', height: 240, borderRadius: radius.md, backgroundColor: colors.surface2 },
+  content: { padding: space.s4, gap: space.s4, paddingBottom: space.s7 },
+  image: { width: '100%', height: 260, borderRadius: radius.lg, backgroundColor: colors.surface2 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.s2 },
   badgeRow: { flexDirection: 'row', alignItems: 'center' },
   eventRow: { flexDirection: 'row', alignItems: 'center', gap: space.s3 },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: space.s2 },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s3,
+    padding: space.s3,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: space.s2, flexWrap: 'wrap' },
 });

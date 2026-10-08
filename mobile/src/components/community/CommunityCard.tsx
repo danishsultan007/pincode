@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card } from '@/components/ui/Card';
+import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
@@ -41,6 +42,7 @@ export function CommunityCard({ community, onJoin, onLeave, joining, leaving }: 
   return (
     <Card onPress={() => router.push(`/community/${community.slug}`)}>
       <View style={styles.row}>
+        <Avatar name={community.name} size={48} shape="rounded" />
         <View style={styles.body}>
           <Text variant="cardTitle" numberOfLines={1}>
             {community.name}

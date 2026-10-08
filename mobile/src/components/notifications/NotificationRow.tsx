@@ -50,8 +50,8 @@ export function NotificationRow({ notification, onPress }: NotificationRowProps)
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}>
-      <View style={styles.iconWrap}>
-        <Icon name={iconFor(notification.kind)} size={18} color={colors.ink2} />
+      <View style={[styles.iconWrap, unread ? styles.iconWrapUnread : null]}>
+        <Icon name={iconFor(notification.kind)} size={18} color={unread ? colors.accent : colors.ink2} />
       </View>
       <View style={styles.body}>
         <Text variant="body" numberOfLines={2} style={unread ? styles.unreadText : undefined}>
@@ -80,13 +80,14 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.surface2 },
   iconWrap: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: radius.pill,
     backgroundColor: colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconWrapUnread: { backgroundColor: colors.accentSoft },
   body: { flex: 1, gap: 2 },
   unreadText: { fontWeight: '600' },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent, marginTop: 6 },

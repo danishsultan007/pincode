@@ -71,6 +71,7 @@ export default function InboxTab() {
   return (
     <Screen>
       <Header
+        large
         title="Inbox"
         right={
           tab === 'notifications' ? (
@@ -132,6 +133,6 @@ export default function InboxTab() {
 }
 
 const styles = StyleSheet.create({
-  segmentWrap: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s2 },
-  list: { paddingBottom: space.s6 },
+  segmentWrap: { paddingHorizontal: space.s4, paddingTop: space.s1, paddingBottom: space.s3 },
+  list: { paddingBottom: space.s7 },
 });

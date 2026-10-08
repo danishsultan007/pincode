@@ -53,16 +53,16 @@ export function ReactionBar({ counts, mine, onToggle }: ReactionBarProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s1 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s2 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    height: 28,
-    paddingHorizontal: space.s2,
+    height: 30,
+    paddingHorizontal: 10,
     borderRadius: radius.pill,
     borderWidth: 1,
   },
   idle: { backgroundColor: colors.surface, borderColor: colors.line },
-  active: { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
+  active: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
 });

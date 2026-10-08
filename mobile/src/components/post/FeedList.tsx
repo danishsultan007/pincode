@@ -46,5 +46,5 @@ export function FeedList({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: space.s4, paddingBottom: space.s6, gap: space.s3 },
+  content: { paddingHorizontal: space.s4, paddingTop: space.s1, paddingBottom: space.s6, gap: space.s3 },
 });

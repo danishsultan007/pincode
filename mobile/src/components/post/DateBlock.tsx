@@ -24,14 +24,14 @@ export function DateBlock({ startsAt }: DateBlockProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.sm,
-    backgroundColor: colors.accentSoft,
+    width: 48,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: colors.eventSoft,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 0,
   },
-  day: { color: colors.accent, lineHeight: 18 },
-  month: { color: colors.accent, fontSize: 9, letterSpacing: 0.4 },
+  day: { color: colors.event, fontSize: 20, lineHeight: 22, fontWeight: '800' },
+  month: { color: colors.event, fontSize: 10, letterSpacing: 0.6 },
 });

@@ -12,7 +12,7 @@ export type DurationChipsProps = {
 // event duration chips (1h, 2h, 3h, Half day, All day) — MOBILE-PLAN.md §4.
 export function DurationChips({ options, value, onChange }: DurationChipsProps) {
   return (
-    <ChipRow scroll={false}>
+    <ChipRow flush scroll={false}>
       {options.map((label) => (
         <Chip key={label} label={label} selected={value === label} onPress={() => onChange(label)} />
       ))}

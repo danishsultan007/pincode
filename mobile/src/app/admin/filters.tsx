@@ -86,7 +86,7 @@ export default function AdminFilters() {
     <Screen scroll edges={['top']}>
       <Header title="Filter terms" left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />} />
       <View style={styles.body}>
-        <SectionTitle title="Test text" />
+        <SectionTitle flush title="Test text" />
         <TextField value={testText} onChangeText={setTestText} placeholder="Paste text to test" multiline maxLength={2000} />
         <Segmented options={TEST_SCOPE_OPTIONS} value={testScope} onChange={setTestScope} />
         <Button label="Test" onPress={handleTest} loading={testing} disabled={!testText.trim()} />
@@ -98,15 +98,15 @@ export default function AdminFilters() {
         ) : null}
 
         <Divider />
-        <SectionTitle title="Add filter term" />
+        <SectionTitle flush title="Add filter term" />
         <TextField label="Pattern (regex)" value={pattern} onChangeText={setPattern} autoCapitalize="none" />
-        <ChipRow>
+        <ChipRow flush>
           {CATEGORIES.map((c) => (
             <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
           ))}
         </ChipRow>
         <Segmented options={ACTION_OPTIONS} value={action} onChange={setAction} full />
-        <ChipRow>
+        <ChipRow flush>
           {SCOPES.map((s) => (
             <Chip key={s} label={s} selected={scopes.includes(s)} onPress={() => toggleScope(s)} />
           ))}
@@ -115,7 +115,7 @@ export default function AdminFilters() {
         <Button label="Add" onPress={handleAdd} loading={adding} disabled={!pattern.trim() || !scopes.length} />
 
         <Divider />
-        <SectionTitle title={`Terms (${terms?.length ?? 0})`} />
+        <SectionTitle flush title={`Terms (${terms?.length ?? 0})`} />
         {isLoading
           ? null
           : (terms ?? []).map((t) => (

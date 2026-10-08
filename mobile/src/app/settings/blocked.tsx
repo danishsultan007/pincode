@@ -30,6 +30,7 @@ export default function BlockedUsers() {
   return (
     <Screen scroll>
       <Header
+        large
         title={copy.settings.blockedUsers}
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />

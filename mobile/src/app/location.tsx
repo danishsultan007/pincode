@@ -70,14 +70,14 @@ export default function LocationModal() {
 
         <Button label={copy.location.useCurrent} variant="ghost" icon="crosshair" onPress={handleUseCurrent} loading={location.status === 'loading'} />
 
-        <SectionTitle title="Jump to" />
-        <ChipRow>
+        <SectionTitle flush title="Jump to" />
+        <ChipRow flush>
           {copy.location.jumpChips.map((area) => (
             <Chip key={area} label={area} onPress={() => handleJump(area)} />
           ))}
         </ChipRow>
 
-        <SectionTitle title="Radius" />
+        <SectionTitle flush title="Radius" />
         <Segmented
           options={RADII.map((r) => ({ value: String(r), label: `${r} km` }))}
           value={String(location.radius)}
@@ -91,5 +91,5 @@ export default function LocationModal() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: space.s4, gap: space.s3 },
+  body: { padding: space.s4, gap: space.s4 },
 });

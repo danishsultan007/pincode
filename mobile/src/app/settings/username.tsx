@@ -87,6 +87,7 @@ export default function ChangeUsername() {
   return (
     <Screen scroll>
       <Header
+        large
         title="Change username"
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />

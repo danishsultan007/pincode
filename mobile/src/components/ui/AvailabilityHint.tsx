@@ -13,7 +13,7 @@ export type AvailabilityHintProps = {
 const COLOR: Record<AvailabilityState, string> = {
   idle: colors.ink3,
   checking: colors.ink3,
-  ok: colors.accent,
+  ok: colors.success,
   taken: colors.danger,
   invalid: colors.danger,
   error: colors.danger,

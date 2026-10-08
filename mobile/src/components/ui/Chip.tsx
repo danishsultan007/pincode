@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Text } from './Text';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, motion, radius } from '@/theme/tokens';
 
 export type ChipProps = {
   label: string;
@@ -10,22 +10,22 @@ export type ChipProps = {
   onPress?: () => void;
 };
 
-const HEIGHT = 32;
-
 export function Chip({ label, selected, pressed, onPress }: ChipProps) {
-  const active = selected || pressed;
+  const labelColor = selected ? colors.onInk : pressed ? colors.accent : colors.ink2;
+  const labelWeight = selected || pressed ? '600' : '500';
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
       onPress={onPress}
       hitSlop={4}
-      style={[
+      style={({ pressed: touching }) => [
         styles.base,
         selected ? styles.selected : pressed ? styles.pressedState : styles.idle,
+        touching ? { transform: [{ scale: motion.pressScale }] } : null,
       ]}
     >
-      <Text variant="secondary" style={{ color: active ? (selected ? colors.accentInk : colors.accent) : colors.ink2 }}>
+      <Text variant="secondary" style={{ color: labelColor, fontWeight: labelWeight }}>
         {label}
       </Text>
     </Pressable>
@@ -34,9 +34,9 @@ export function Chip({ label, selected, pressed, onPress }: ChipProps) {
 
 const styles = StyleSheet.create({
   base: {
-    height: HEIGHT,
+    height: 34,
     borderRadius: radius.pill,
-    paddingHorizontal: space.s4,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

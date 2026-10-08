@@ -48,6 +48,7 @@ export type IconProps = {
   name: IconName;
   size?: number;
   color?: string;
+  strokeWidth?: number;
 };
 
 const STROKE_WIDTH = 1.8;
@@ -307,9 +308,9 @@ function shapes(name: IconName): React.ReactNode {
   }
 }
 
-export function Icon({ name, size = 16, color = colors.ink }: IconProps) {
+export function Icon({ name, size = 16, color = colors.ink, strokeWidth = STROKE_WIDTH }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" stroke={color} strokeWidth={STROKE_WIDTH} color={color}>
+    <Svg width={size} height={size} viewBox="0 0 24 24" stroke={color} strokeWidth={strokeWidth} color={color}>
       {shapes(name)}
     </Svg>
   );

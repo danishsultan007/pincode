@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, motion, radius, shadow, space } from '@/theme/tokens';
 
 type ToastOptions = { actionLabel?: string; onAction?: () => void };
 type ToastState = { message: string } & ToastOptions;
@@ -17,12 +17,20 @@ const DURATION_MS = 2500;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const anim = useRef(new Animated.Value(0)).current;
 
   const show = useCallback((message: string, options?: ToastOptions) => {
     if (timer.current) clearTimeout(timer.current);
     setToast({ message, ...options });
+    anim.setValue(0);
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: motion.base,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
     timer.current = setTimeout(() => setToast(null), DURATION_MS);
-  }, []);
+  }, [anim]);
 
   const handleAction = useCallback(() => {
     toast?.onAction?.();
@@ -35,7 +43,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {toast ? (
         <View pointerEvents="box-none" style={styles.host}>
-          <View style={styles.pill}>
+          <Animated.View
+            style={[
+              styles.pill,
+              { opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
+            ]}
+          >
             <Text variant="body" numeric={false} numberOfLines={2} style={styles.message}>
               {toast.message}
             </Text>
@@ -46,7 +59,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 </Text>
               </Pressable>
             ) : null}
-          </View>
+          </Animated.View>
         </View>
       ) : null}
     </ToastContext.Provider>
@@ -64,7 +77,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: space.s6,
+    bottom: 96,
     alignItems: 'center',
     paddingHorizontal: space.s4,
   },
@@ -75,15 +88,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     borderRadius: radius.pill,
     paddingVertical: space.s3,
-    paddingHorizontal: space.s4,
+    paddingHorizontal: 18,
+    boxShadow: shadow.popover,
     maxWidth: 520,
   },
   message: {
-    color: colors.surface,
+    color: colors.onInk,
     flexShrink: 1,
   },
   action: {
-    color: colors.accentSoft,
-    fontWeight: '600',
+    color: colors.accentInverse,
+    fontWeight: '700',
   },
 });

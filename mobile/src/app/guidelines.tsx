@@ -47,6 +47,7 @@ export default function Guidelines() {
   return (
     <Screen scroll>
       <Header
+        large
         title="Community guidelines"
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />
@@ -66,6 +67,6 @@ export default function Guidelines() {
 
 const styles = StyleSheet.create({
   body: { paddingBottom: space.s6 },
-  section: { paddingHorizontal: space.s4, gap: space.s1 },
-  text: { marginBottom: space.s3 },
+  section: { gap: space.s1 },
+  text: { paddingHorizontal: space.s4, marginBottom: space.s3 },
 });

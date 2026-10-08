@@ -42,7 +42,7 @@ export default function PostsMap({ center, radiusKm, items, user, onPressPost, o
           center={{ latitude: center.lat, longitude: center.lng }}
           radius={radiusKm * 1000}
           strokeColor={colors.accent}
-          fillColor="rgba(15,118,110,0.06)"
+          fillColor={colors.accentTint}
           strokeWidth={1}
         />
         {user ? (

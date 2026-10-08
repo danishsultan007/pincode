@@ -103,13 +103,13 @@ export default function AdminItem() {
           />
         ) : null}
 
-        <SectionTitle title="Content" />
+        <SectionTitle flush title="Content" />
         <Text variant="body">{excerpt || 'Not available.'}</Text>
 
         {item.reasons.length ? (
           <>
-            <SectionTitle title="Filter reasons" />
-            <ChipRow>
+            <SectionTitle flush title="Filter reasons" />
+            <ChipRow flush>
               {item.reasons.map((r) => (
                 <Chip key={r} label={r} />
               ))}
@@ -119,7 +119,7 @@ export default function AdminItem() {
 
         {reports?.length ? (
           <>
-            <SectionTitle title={`Reports (${reports.length})`} />
+            <SectionTitle flush title={`Reports (${reports.length})`} />
             {reports.map((r) => (
               <View key={r.id} style={styles.reportRow}>
                 <Text variant="bodySm">
@@ -141,7 +141,7 @@ export default function AdminItem() {
         ) : (
           <>
             <Divider />
-            <SectionTitle title="Decision" />
+            <SectionTitle flush title="Decision" />
             <TextField
               label="Reason"
               value={reason}
@@ -150,7 +150,7 @@ export default function AdminItem() {
               maxLength={500}
               placeholder="Shown to the user"
             />
-            <ChipRow>
+            <ChipRow flush>
               {REPORT_CATEGORIES.map((c) => (
                 <Chip key={c.code} label={c.label} selected={category === c.code} onPress={() => setCategory(c.code)} />
               ))}

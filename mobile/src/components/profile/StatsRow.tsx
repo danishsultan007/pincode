@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
-import { space } from '@/theme/tokens';
+import { colors, radius, shadow, space } from '@/theme/tokens';
 
 export type StatsRowProps = {
   reputation: number;
@@ -25,10 +25,12 @@ export function StatsRow({ reputation, posts, answers, solved, communities }: St
     <View style={styles.stats}>
       {stats.map(([label, value]) => (
         <View key={label} style={styles.statCell}>
-          <Text variant="cardTitle" numeric>
+          <Text variant="headline" numeric>
             {value}
           </Text>
-          <Text variant="meta">{label}</Text>
+          <Text variant="meta" numberOfLines={1} adjustsFontSizeToFit style={styles.statLabel}>
+            {label}
+          </Text>
         </View>
       ))}
     </View>
@@ -36,6 +38,16 @@ export function StatsRow({ reputation, posts, answers, solved, communities }: St
 }
 
 const styles = StyleSheet.create({
-  stats: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: space.s4, paddingVertical: space.s3 },
-  statCell: { width: '20%', alignItems: 'center', gap: 2, marginBottom: space.s2 },
+  stats: {
+    flexDirection: 'row',
+    marginHorizontal: space.s4,
+    paddingVertical: space.s4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    boxShadow: shadow.xs,
+  },
+  statCell: { flex: 1, alignItems: 'center', gap: 2 },
+  statLabel: { fontSize: 11 },
 });

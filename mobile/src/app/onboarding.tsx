@@ -213,6 +213,7 @@ export default function Onboarding() {
   return (
     <Screen scroll>
       <Header
+        large
         title={STEP_TITLES[step]}
         left={step > 0 ? <IconButton name="chevron-left" label="Back" onPress={() => setStep((s) => s - 1)} /> : undefined}
       />
@@ -228,16 +229,16 @@ export default function Onboarding() {
               maxLength={20}
             />
             <AvailabilityHint state={usernameState} message={usernameMessage} />
-            <SectionTitle
+            <SectionTitle flush
               title="Suggestions"
               right={<IconButton name="refresh" label="More suggestions" onPress={loadSuggestions} />}
             />
-            <ChipRow>
+            <ChipRow flush>
               {suggestions.map((s) => (
                 <Chip key={s} label={s} onPress={() => setUsername(s)} />
               ))}
             </ChipRow>
-            <Button label="Next" onPress={() => setStep(1)} disabled={!step1Valid} />
+            <Button size="lg" label="Next" onPress={() => setStep(1)} disabled={!step1Valid} />
           </View>
         ) : null}
 
@@ -253,13 +254,13 @@ export default function Onboarding() {
             />
             <AvailabilityHint state={phoneState} message={phoneMessage} />
             <Text variant="meta">{copy.onboarding.phoneNote}</Text>
-            <Button label="Next" onPress={() => setStep(2)} disabled={!step2Valid} />
+            <Button size="lg" label="Next" onPress={() => setStep(2)} disabled={!step2Valid} />
           </View>
         ) : null}
 
         {step === 2 ? (
           <View style={styles.section}>
-            <SectionTitle title="Home area" />
+            <SectionTitle flush title="Home area" />
             <Button
               label={copy.location.useCurrent}
               variant="ghost"
@@ -280,8 +281,8 @@ export default function Onboarding() {
               </Text>
             ) : null}
 
-            <SectionTitle title="Interests" />
-            <ChipRow scroll={false}>
+            <SectionTitle flush title="Interests" />
+            <ChipRow flush scroll={false}>
               {INTERESTS.map((i) => (
                 <Chip key={i} label={i} selected={interests.includes(i)} onPress={() => toggleInterest(i)} />
               ))}
@@ -295,7 +296,7 @@ export default function Onboarding() {
               right={<Button label="Add" size="sm" variant="text" onPress={addCustomInterest} />}
             />
 
-            <Button label="Finish" onPress={finish} loading={submitting} />
+            <Button size="lg" label="Finish" onPress={finish} loading={submitting} />
           </View>
         ) : null}
       </View>
@@ -304,6 +305,6 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: space.s4 },
-  section: { gap: space.s3 },
+  body: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s6, gap: space.s4, width: '100%', maxWidth: 480, alignSelf: 'center' },
+  section: { gap: space.s4 },
 });

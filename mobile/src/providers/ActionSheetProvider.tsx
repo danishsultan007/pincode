@@ -190,7 +190,7 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
         <View style={styles.confirmHost} pointerEvents="box-none">
           <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
           <View style={styles.confirmCard}>
-            <Text variant="cardTitle">{state.title}</Text>
+            <Text variant="headline">{state.title}</Text>
             {state.message ? <Text variant="secondary">{state.message}</Text> : null}
             <View style={styles.confirmActions}>
               <Button label={state.options.cancelLabel} variant="ghost" onPress={dismiss} />
@@ -215,26 +215,28 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: MENU_W,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.line,
-    paddingVertical: space.s1,
+    padding: 6,
     boxShadow: shadow.popover,
     overflow: 'auto',
   } as any,
   menuTitle: { paddingHorizontal: space.s3, paddingTop: space.s2, paddingBottom: space.s1 },
-  menuRow: { minHeight: 40, justifyContent: 'center', paddingHorizontal: space.s3 },
+  menuRow: { minHeight: 44, justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: space.s3 },
   destructiveText: { color: colors.danger },
   confirmHost: { ...StyleSheet.absoluteFill, justifyContent: 'center', alignItems: 'center', padding: space.s4 },
   confirmCard: {
     width: '100%',
     maxWidth: 400,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: space.s4,
+    borderRadius: radius.xl,
+    padding: space.s5,
     gap: space.s2,
+    borderWidth: 1,
+    borderColor: colors.line,
     boxShadow: shadow.popover,
   } as any,
-  confirmActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.s2, marginTop: space.s2 },
+  confirmActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.s2, marginTop: space.s4 },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },
 });

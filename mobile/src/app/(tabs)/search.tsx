@@ -31,7 +31,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useToast } from '@/providers/ToastProvider';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
-import { colors, space } from '@/theme/tokens';
+import { colors, radius, space } from '@/theme/tokens';
 import type { PostCard as PostCardModel, UserSearchResult } from '@/types/models';
 
 const TAB_OPTIONS: { value: SearchTab; label: string }[] = [
@@ -189,7 +189,7 @@ export default function SearchTabScreen() {
 
   return (
     <Screen edges={['top']}>
-      <Header title="Search" />
+      <Header large title="Search" />
       <View style={styles.searchBar}>
         <SearchInput
           value={input}
@@ -226,9 +226,9 @@ export default function SearchTabScreen() {
 function SkeletonList() {
   return (
     <View style={styles.skeletons}>
-      <Skeleton height={80} />
-      <Skeleton height={80} />
-      <Skeleton height={80} />
+      <Skeleton height={84} radius={radius.lg} />
+      <Skeleton height={84} radius={radius.lg} />
+      <Skeleton height={84} radius={radius.lg} />
     </View>
   );
 }
@@ -243,7 +243,7 @@ function UserResultRow({ user, onPress }: { user: UserSearchResult; onPress: () 
   return (
     <Card onPress={onPress}>
       <View style={styles.userRow}>
-        <Avatar uri={user.avatar_url} name={user.display_name} size={40} />
+        <Avatar uri={user.avatar_url} name={user.display_name} size={44} />
         <View style={styles.userBody}>
           <Text variant="cardTitle" numberOfLines={1}>
             {user.display_name}
@@ -266,8 +266,8 @@ function UserResultRow({ user, onPress }: { user: UserSearchResult; onPress: () 
 }
 
 const styles = StyleSheet.create({
-  searchBar: { paddingHorizontal: space.s4, paddingTop: space.s2, paddingBottom: space.s2 },
-  tabsRow: { paddingHorizontal: space.s4, paddingBottom: space.s3 },
+  searchBar: { paddingHorizontal: space.s4, paddingTop: space.s1, paddingBottom: space.s2 },
+  tabsRow: { paddingHorizontal: space.s4, paddingTop: space.s1, paddingBottom: space.s3 },
   body: { flex: 1 },
   recentSection: { paddingBottom: space.s2 },
   listContent: { paddingHorizontal: space.s4, paddingBottom: space.s6, flexGrow: 1 },

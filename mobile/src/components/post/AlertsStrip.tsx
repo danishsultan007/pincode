@@ -18,5 +18,5 @@ export function AlertsStrip({ alerts }: AlertsStripProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: space.s2, paddingHorizontal: space.s4, paddingVertical: space.s2 },
+  row: { flexDirection: 'row', gap: space.s3, paddingHorizontal: space.s4, paddingVertical: space.s1 },
 });

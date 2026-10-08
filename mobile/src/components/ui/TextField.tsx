@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { KeyboardTypeOptions, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardTypeOptions, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from './Text';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, font, radius, space } from '@/theme/tokens';
 
 export type TextFieldProps = {
   label?: string;
@@ -43,7 +43,7 @@ export function TextField({
   return (
     <View style={styles.wrap}>
       {label ? (
-        <Text variant="label" style={styles.label}>
+        <Text variant="fieldLabel">
           {label}
         </Text>
       ) : null}
@@ -92,30 +92,32 @@ export function TextField({
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.s1 },
-  label: { marginBottom: 2 },
+  wrap: { gap: 6 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    paddingHorizontal: space.s3,
-    minHeight: 44,
-    backgroundColor: colors.surface,
     gap: space.s2,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    backgroundColor: colors.surface2,
   },
-  multilineField: { minHeight: 88, alignItems: 'flex-start', paddingVertical: space.s3 },
-  focused: { borderColor: colors.accent },
+  multilineField: { minHeight: 112, alignItems: 'flex-start', paddingVertical: space.s3 },
+  focused: { borderColor: colors.accent, backgroundColor: colors.surface, boxShadow: `0 0 0 4px ${colors.focusRing}` },
   errorField: { borderColor: colors.danger },
   input: {
     flex: 1,
-    fontSize: 15,
+    minWidth: 0,
+    fontSize: 16,
     lineHeight: 22,
     color: colors.ink,
-    paddingVertical: space.s2,
+    fontFamily: font.regular,
+    paddingVertical: 10,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
-  multilineInput: { minHeight: 66, textAlignVertical: 'top' },
-  prefix: { color: colors.ink2 },
-  errorText: { color: colors.danger },
+  multilineInput: { minHeight: 84, textAlignVertical: 'top' },
+  prefix: { color: colors.ink2, fontWeight: '600' },
+  errorText: { color: colors.danger, fontWeight: '500' },
 });

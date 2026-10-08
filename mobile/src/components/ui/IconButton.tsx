@@ -12,7 +12,7 @@ export type IconButtonProps = {
   disabled?: boolean;
 };
 
-const TOUCH_TARGET = 32;
+const TOUCH_TARGET = 36;
 
 export function IconButton({ name, onPress, label, color = colors.ink, size = 18, disabled }: IconButtonProps) {
   return (
@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { backgroundColor: colors.surface2 },
+  pressed: { backgroundColor: colors.surface2, transform: [{ scale: 0.94 }] },
   disabled: { opacity: 0.4 },
 });

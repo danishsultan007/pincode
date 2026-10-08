@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, font, radius, space } from '@/theme/tokens';
 
 export type SearchInputProps = {
   value: string;
@@ -37,16 +37,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.s2,
     height: 44,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    paddingHorizontal: space.s3,
+    borderRadius: radius.pill,
+    borderWidth: 0,
+    backgroundColor: colors.surface2,
+    paddingHorizontal: 14,
   },
-  wrapCompact: { height: 36 },
+  wrapCompact: { height: 38 },
   input: {
     flex: 1,
-    fontSize: 15,
+    minWidth: 0,
+    fontSize: 16,
     color: colors.ink,
+    fontFamily: font.regular,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
   },
 });

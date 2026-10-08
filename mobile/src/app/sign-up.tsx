@@ -74,6 +74,7 @@ export default function SignUp() {
     return (
       <Screen>
         <Header
+          large
           title="Check your inbox"
           left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
         />
@@ -101,6 +102,7 @@ export default function SignUp() {
   return (
     <Screen scroll>
       <Header
+        large
         title="Create account"
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />
@@ -130,12 +132,12 @@ export default function SignUp() {
           onSubmitEditing={submit}
         />
         <Text variant="meta">Next you&apos;ll pick a username.</Text>
-        <Button label="Continue" onPress={submit} loading={loading} disabled={!canSubmit} />
+        <Button size="lg" label="Continue" onPress={submit} loading={loading} disabled={!canSubmit} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { padding: space.s4, gap: space.s3 },
+  form: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s6, gap: space.s4, width: '100%', maxWidth: 480, alignSelf: 'center' },
 });

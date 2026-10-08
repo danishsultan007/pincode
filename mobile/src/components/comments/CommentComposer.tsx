@@ -1,10 +1,11 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { TextField } from '@/components/ui/TextField';
+import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { copy } from '@/lib/copy';
-import { colors, radius, space } from '@/theme/tokens';
+import { colors, motion, radius, space } from '@/theme/tokens';
 
 export type CommentComposerProps = {
   value: string;
@@ -39,13 +40,27 @@ export function CommentComposer({
         </View>
       ) : null}
       <View style={styles.row}>
-        <TextField
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          onSubmitEditing={disabled ? undefined : onSubmit}
-        />
-        <IconButton name="send" label="Send" onPress={onSubmit} color={colors.accent} disabled={disabled} />
+        <View style={{ flex: 1 }}>
+          <TextField
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            onSubmitEditing={disabled ? undefined : onSubmit}
+          />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send"
+          onPress={onSubmit}
+          disabled={disabled}
+          style={({ pressed }) => [
+            styles.send,
+            { backgroundColor: disabled ? colors.surface2 : colors.accent },
+            pressed && !disabled ? { transform: [{ scale: motion.pressScale }] } : null,
+          ]}
+        >
+          <Icon name="send" size={18} color={disabled ? colors.ink3 : colors.accentInk} />
+        </Pressable>
       </View>
     </View>
   );
@@ -55,8 +70,9 @@ const styles = StyleSheet.create({
   wrap: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
-    backgroundColor: colors.bg,
-    padding: space.s3,
+    backgroundColor: colors.surface,
+    paddingHorizontal: space.s3,
+    paddingVertical: space.s2,
     gap: space.s2,
   },
   replyChip: {
@@ -65,10 +81,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignSelf: 'flex-start',
     gap: space.s2,
-    paddingHorizontal: space.s2,
-    paddingVertical: 4,
+    paddingHorizontal: space.s3,
+    height: 28,
+    paddingVertical: 0,
     borderRadius: radius.pill,
     backgroundColor: colors.accentSoft,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.s2 },
+  send: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

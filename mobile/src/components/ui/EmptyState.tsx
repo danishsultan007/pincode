@@ -1,22 +1,30 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Icon, IconName } from './Icon';
+import { RadarRings } from './RadarRings';
 import { Text } from './Text';
-import { space } from '@/theme/tokens';
+import { colors, space } from '@/theme/tokens';
 
 export type EmptyStateProps = {
   title: string;
   text?: string;
   actions?: React.ReactNode;
+  icon?: IconName;
 };
 
-export function EmptyState({ title, text, actions }: EmptyStateProps) {
+export function EmptyState({ title, text, actions, icon = 'pin' }: EmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <Text variant="cardTitle" style={styles.center}>
+      <View style={styles.rings}>
+        <RadarRings size={88}>
+          <Icon name={icon} size={22} color={colors.accent} />
+        </RadarRings>
+      </View>
+      <Text variant="cardTitle" style={styles.title}>
         {title}
       </Text>
       {text ? (
-        <Text variant="secondary" style={styles.center}>
+        <Text variant="secondary" style={styles.text}>
           {text}
         </Text>
       ) : null}
@@ -26,7 +34,9 @@ export function EmptyState({ title, text, actions }: EmptyStateProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', padding: space.s6, gap: space.s2 },
-  center: { textAlign: 'center' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s2, marginTop: space.s3, justifyContent: 'center' },
+  wrap: { alignItems: 'center', paddingVertical: space.s7, paddingHorizontal: space.s5, gap: space.s2 },
+  rings: { marginBottom: space.s2 },
+  title: { textAlign: 'center', fontSize: 17 },
+  text: { textAlign: 'center', maxWidth: 300 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s2, marginTop: space.s4, justifyContent: 'center' },
 });

@@ -47,7 +47,7 @@ export default function ResetPassword() {
 
   return (
     <Screen scroll>
-      <Header title="Reset password" />
+      <Header large title="Reset password" />
       <View style={styles.form}>
         {!ready ? (
           <Text variant="secondary">Open the reset link from your email to continue.</Text>
@@ -68,6 +68,7 @@ export default function ResetPassword() {
               error={confirm && confirm !== password ? "Passwords don't match" : undefined}
             />
             <Button
+              size="lg"
               label="Update password"
               onPress={submit}
               loading={loading}
@@ -81,5 +82,5 @@ export default function ResetPassword() {
 }
 
 const styles = StyleSheet.create({
-  form: { padding: space.s4, gap: space.s3 },
+  form: { paddingHorizontal: space.s4, paddingTop: space.s3, paddingBottom: space.s6, gap: space.s4, width: '100%', maxWidth: 480, alignSelf: 'center' },
 });

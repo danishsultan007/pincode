@@ -49,6 +49,7 @@ export default function NotificationSettings() {
   return (
     <Screen scroll>
       <Header
+        large
         title="Notifications"
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
       />

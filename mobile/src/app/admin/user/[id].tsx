@@ -103,9 +103,9 @@ export default function AdminUser() {
         {inTrouble ? <Button label="Lift ban" onPress={handleLiftBan} loading={liftBusy} /> : null}
 
         <Divider />
-        <SectionTitle title="Issue strike" />
+        <SectionTitle flush title="Issue strike" />
         <TextField label="Reason" value={strikeReason} onChangeText={setStrikeReason} multiline maxLength={500} />
-        <ChipRow>
+        <ChipRow flush>
           {REPORT_CATEGORIES.map((c) => (
             <Chip key={c.code} label={c.label} selected={strikeCategory === c.code} onPress={() => setStrikeCategory(c.code)} />
           ))}
@@ -117,7 +117,7 @@ export default function AdminUser() {
         <Button label="Issue strike" variant="danger" onPress={handleIssueStrike} loading={strikeBusy} disabled={!strikeReason.trim()} />
 
         <Divider />
-        <SectionTitle title="Strike history" />
+        <SectionTitle flush title="Strike history" />
         {(strikes ?? []).length ? (
           (strikes ?? []).map((s) => (
             <View key={s.id} style={styles.row}>
@@ -135,7 +135,7 @@ export default function AdminUser() {
         )}
 
         <Divider />
-        <SectionTitle title="Moderation actions" />
+        <SectionTitle flush title="Moderation actions" />
         {(actions ?? []).length ? (
           (actions ?? []).map((a) => (
             <View key={a.id} style={styles.row}>

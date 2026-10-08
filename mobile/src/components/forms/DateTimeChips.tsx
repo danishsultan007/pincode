@@ -53,7 +53,7 @@ export function DateTimeChips({ value, onChange }: DateTimeChipsProps) {
 
   return (
     <View style={styles.wrap}>
-      <ChipRow>
+      <ChipRow flush>
         {days.map((d, i) => (
           <Chip
             key={d.toISOString()}
@@ -63,7 +63,7 @@ export function DateTimeChips({ value, onChange }: DateTimeChipsProps) {
           />
         ))}
       </ChipRow>
-      <ChipRow>
+      <ChipRow flush>
         {slots.map((slot) => (
           <Chip
             key={slot.toISOString()}

@@ -69,22 +69,39 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 // Username, email and phone are all unique per account, so sign-in accepts
-// any of the three. Supabase Auth itself only takes an email, so a
-// non-email identifier is resolved to one first via email_for_login() —
-// see that function's own comment for why this doesn't leak whether an
-// identifier exists (a wrong password still fails with Supabase's own
-// generic error either way).
+// any of the three. Supabase Auth itself only takes an email, so a username
+// or phone is resolved to one on the server by the login-with-identifier
+// Edge Function, which returns only a session — the email is never sent to
+// the client, and an unknown identifier fails exactly like a wrong password.
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 export async function signInWithIdentifier(identifier: string, password: string) {
   const trimmed = identifier.trim();
+  if (EMAIL_RE.test(trimmed)) return signInWithEmail(trimmed.toLowerCase(), password);
+
   const lookup = normalizeIndianPhone(trimmed) ?? trimmed;
-  let email = trimmed;
-  try {
-    const { data } = await supabase.rpc('email_for_login', { p_identifier: lookup });
-    if (typeof data === 'string' && data) email = data;
-  } catch {
-    // Fall through and let signInWithPassword produce its own error.
+  const { data, error } = await supabase.functions.invoke('login-with-identifier', {
+    body: { identifier: lookup, password },
+  });
+  if (error) {
+    // On a non-2xx response supabase-js puts the Response in error.context.
+    // No `context` means the request never got a response (offline, relay failure).
+    let message = (error as { context?: Response }).context ? 'Invalid login credentials' : error.message;
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // Network failure or non-JSON body: keep the generic message.
+    }
+    throw new Error(message);
   }
-  return signInWithEmail(email, password);
+
+  const { data: session, error: sessionError } = await supabase.auth.setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+  });
+  if (sessionError) throw sessionError;
+  return session;
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {

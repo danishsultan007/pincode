@@ -6,7 +6,11 @@ export const DEFAULT_LOC = {
   pincode: '560048',
 } as const;
 
-export const RINGS = [1, 3, 5, 10] as const;
+// Contact address shown on the public delete-account page. Placeholder until a
+// real support mailbox exists on the production domain.
+export const SUPPORT_EMAIL = 'support@pincode.app';
+
+export const RINGS =[1, 3, 5, 10] as const;
 export const MIN_FEED = 8;
 export const RADII = [1, 3, 5, 10] as const;
 

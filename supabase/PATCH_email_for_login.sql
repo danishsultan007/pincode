@@ -1,3 +1,6 @@
+-- SUPERSEDED: this function leaked emails to anonymous callers. Do not run it;
+-- use PATCH_login_throttle.sql + the login-with-identifier Edge Function instead.
+
 set search_path = public, extensions;
 
 -- ---------- Sign in with username, email or phone ----------

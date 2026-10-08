@@ -2230,3 +2230,76 @@ end $$;
 -- a newly created function is EXECUTE-able by PUBLIC (anon + authenticated)
 -- by default, which is what a pre-auth sign-in lookup needs.
 
+
+-- ---- 20260927001500_login_throttle.sql ----
+set search_path = public, extensions;
+
+-- ---------- Login throttling (used by the login-with-identifier Edge Function) ----------
+-- Keys are 'ip:<ip>', 'id:<sha256 of lower-cased identifier>' and
+-- 'idip:<sha256 of identifier|ip>', so no usernames/emails/phones are stored here.
+-- Counters live in a table, not in function memory, because Edge isolates are
+-- short-lived and run as many parallel instances.
+create table if not exists public.login_attempts (
+  key text not null,
+  at timestamptz not null default now()
+);
+create index if not exists login_attempts_key_at_idx on public.login_attempts (key, at);
+alter table public.login_attempts enable row level security;   -- no policies: service_role only
+
+-- Records one attempt per key, then reports whether every key is still within
+-- its limit (count includes this attempt). Check-and-record is one statement
+-- sequence so parallel requests cannot all slip under the limit. Every attempt
+-- counts; a successful sign-in then clears its own identifier+IP key.
+create or replace function public.login_throttle_hit(p_keys text[], p_max int[], p_window interval)
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
+declare i int; ok boolean := true;
+begin
+  delete from login_attempts where at < now() - interval '1 day';
+  insert into login_attempts(key) select unnest(p_keys);
+  for i in 1 .. coalesce(array_length(p_keys, 1), 0) loop
+    if (select count(*) from login_attempts where key = p_keys[i] and at > now() - p_window) > p_max[i] then
+      ok := false;
+    end if;
+  end loop;
+  return ok;
+end $$;
+
+create or replace function public.login_throttle_clear(p_key text) returns void
+language sql security definer set search_path = public, extensions as $$
+  delete from login_attempts where key = p_key $$;
+
+revoke all on function public.login_throttle_hit(text[], int[], interval) from public, anon, authenticated;
+revoke all on function public.login_throttle_clear(text)                  from public, anon, authenticated;
+grant execute on function public.login_throttle_hit(text[], int[], interval) to service_role;
+grant execute on function public.login_throttle_clear(text)                  to service_role;
+
+-- ---------- phone_available: signed-in callers only ----------
+-- Only called from onboarding and Settings → Phone (both signed in), and it
+-- tells the caller whether a number is registered, so there's no reason to
+-- leave it open to anonymous callers. (username_available stays open: usernames
+-- are public on profiles anyway. email_available stays open for the sign-up
+-- form — see the follow-up note in DEPLOY notes: it is an existence oracle and
+-- should be removed once sign-up relies on the signUp response alone.)
+revoke execute on function public.phone_available(text) from public, anon;
+grant  execute on function public.phone_available(text) to authenticated;
+
+-- ---- 20260927001600_login_lockdown.sql ----
+set search_path = public, extensions;
+
+-- ---------- Close the email leak ----------
+-- email_for_login() returned the real email for any username/phone to ANY
+-- caller, signed in or not. Sign-in by username/phone now goes through the
+-- login-with-identifier Edge Function, which does the lookup with the service
+-- role and returns only a session.
+--
+-- RUN THIS ONLY AFTER the login-with-identifier function is deployed and the
+-- updated app is live; otherwise username/phone sign-in stops working
+-- (email sign-in is unaffected). Revoke first so a partial run still closes
+-- the hole.
+revoke execute on function public.email_for_login(text) from public, anon, authenticated;
+drop function if exists public.email_for_login(text);
+
+-- Account deletion now goes through the delete-account Edge Function (which
+-- also clears storage); stop clients from calling the bare RPC, which would
+-- leave uploaded files behind.
+revoke execute on function public.delete_my_account() from public, anon, authenticated;

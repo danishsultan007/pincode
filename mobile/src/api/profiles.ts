@@ -89,9 +89,20 @@ export async function setHomeLocation(input: {
   if (error) throw error;
 }
 
+// Goes through the delete-account Edge Function so the user's uploaded files
+// are removed from storage too (the old delete_my_account RPC left them behind).
 export async function deleteMyAccount(): Promise<void> {
-  const { error } = await supabase.rpc('delete_my_account');
-  if (error) throw error;
+  const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+  if (error) {
+    let message = 'Could not delete your account. Please try again.';
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // keep the generic message
+    }
+    throw new Error(message);
+  }
 }
 
 export type ProfileEditInput = Partial<Pick<Profile, 'display_name' | 'bio' | 'interests' | 'avatar_url'>>;

@@ -1,0 +1,10 @@
+# Minimal config so `supabase functions deploy` knows how each function is
+# authenticated. (Run `supabase link --project-ref <ref>` once before deploying.)
+
+# Callers are signed-out users; the anon key still goes along as `apikey`.
+[functions.login-with-identifier]
+verify_jwt = false
+
+# Requires a signed-in user's JWT.
+[functions.delete-account]
+verify_jwt = true

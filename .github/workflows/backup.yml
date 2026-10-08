@@ -1,0 +1,33 @@
+# Nightly encrypted backup of the production database (Supabase's free plan has
+# no automatic backups). Needs two repository secrets (Settings > Secrets > Actions):
+#   SUPABASE_DB_URL    Postgres connection string from Supabase > Connect. Use the
+#                      *session pooler* URL (GitHub runners have no IPv6).
+#   BACKUP_PASSPHRASE  any long random string; you need it to restore.
+# The repository MUST stay private: artifacts hold personal data (encrypted, but still).
+name: Nightly database backup
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 21:00 UTC = 02:30 IST
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          # pg_dump must be at least as new as the server; the 17 image keeps up with Supabase.
+          docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges > pincode.dump
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+              --symmetric --cipher-algo AES256 -o "pincode-$(date -u +%F).dump.gpg" pincode.dump
+          rm pincode.dump
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pincode-db-backup
+          path: pincode-*.dump.gpg
+          retention-days: 14

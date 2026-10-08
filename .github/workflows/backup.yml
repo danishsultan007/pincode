@@ -23,7 +23,8 @@ jobs:
           set -euo pipefail
           # pg_dump must be at least as new as the server; the 17 image keeps up with Supabase.
           docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges > pincode.dump
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+          # Passphrase via stdin (fd 0) so it never appears in the process list.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
               --symmetric --cipher-algo AES256 -o "pincode-$(date -u +%F).dump.gpg" pincode.dump
           rm pincode.dump
       - uses: actions/upload-artifact@v4

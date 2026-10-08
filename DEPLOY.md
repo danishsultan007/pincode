@@ -81,10 +81,11 @@ Cloudflare → Workers & Pages → Create → Pages → connect the GitHub repo 
 - Root directory: `mobile`
 - Build command: `npm ci && npm run export:web`
 - Output directory: `dist`
+- No `_redirects` file is needed: with no `404.html`, Pages serves `index.html` for unknown paths. After the first deploy, open `/privacy` and `/delete-account` directly to confirm.
 - Environment variables (Production *and* Preview): `NODE_VERSION=20`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (prod values), `EXPO_PUBLIC_WEB_URL=https://<your-domain>`, `EXPO_PUBLIC_APP_ENV=production`.
 - Attach your custom domain.
 
-`mobile/public/_redirects` already makes every path serve the app (so `/privacy`, `/terms`, `/delete-account` work). `EXPO_PUBLIC_*` values are baked in at build time — change one, redeploy.
+`EXPO_PUBLIC_*` values are baked in at build time — change one, redeploy.
 
 Public URLs Play needs: `https://<domain>/privacy` and `https://<domain>/delete-account`.
 
@@ -99,7 +100,7 @@ npm i -g eas-cli
 eas login
 eas init
 ```
-`eas init` prints a project ID. Put it in `mobile/app.config.ts` (`EAS_PROJECT_ID`) and your Expo username in `EAS_OWNER` — or set them as EAS env vars. **Do this before the first build**, or updates and push won't work.
+`eas init` prints a project ID (it can't edit `app.config.ts` itself). **Paste it as a literal** into `mobile/app.config.ts` — `const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || '<uuid>'` — and your Expo username into `EAS_OWNER` the same way. They can't come from EAS env vars (EAS needs them to find the project), and `.env` isn't uploaded to build workers. **Do this before the first build**, or updates and push won't work.
 
 ### 5b. Firebase (push)
 Firebase console → new project → add Android app, package `com.pincode.app` → download `google-services.json`. Then:
@@ -176,9 +177,9 @@ Smoke-test the preview APK: sign up, confirm email, Google sign-in, post with ph
 - Ship JS-only fixes without a Play review:
   ```bash
   cd mobile
-  eas update --channel production --message "fix: ..."
+  eas update --channel production --environment production --message "fix: ..."
   ```
-  (Native/config changes need a new build + version bump.)
+  Always pass `--environment` — without it EAS bundles with your local `mobile/.env` (the *dev* Supabase project). Native/config changes need a new build + version bump.
 - Backups: add repo secrets `SUPABASE_DB_URL` (session-pooler URL) and `BACKUP_PASSPHRASE` (GitHub → Settings → Secrets → Actions); `.github/workflows/backup.yml` then dumps and encrypts nightly. **Keep the repo private.** Upgrade Supabase to **Pro** before the production rollout (the free plan has no backups and pauses after 7 idle days).
 
 ## 8. Known follow-ups

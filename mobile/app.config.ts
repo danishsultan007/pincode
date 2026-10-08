@@ -3,10 +3,11 @@ import type { ExpoConfig } from 'expo/config';
 const mapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY;
 
 // EAS: run `eas init` once, then paste the printed project id and your Expo
-// username/org below (or set them as EAS_PROJECT_ID / EAS_OWNER). The id must
-// be present at build time for over-the-air updates and push tokens to work.
-const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? '';
-const EAS_OWNER = process.env.EAS_OWNER || undefined;
+// username/org as literals in the two fallbacks below (EAS needs them from the
+// config itself, and .env isn't uploaded to build workers). The id must be
+// present at build time for over-the-air updates and push tokens to work.
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID || process.env.EXPO_PUBLIC_EAS_PROJECT_ID || ''; // TODO: || '<uuid from eas init>'
+const EAS_OWNER = process.env.EAS_OWNER || undefined; // TODO: || '<expo username>'
 
 // Firebase config for FCM push. EAS injects the file path through the
 // GOOGLE_SERVICES_JSON file env var; for a local native build set it to ./google-services.json.

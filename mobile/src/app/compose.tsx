@@ -114,11 +114,8 @@ export default function Compose() {
   };
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      toast.show('Photo library access is needed to add an image.');
-      return;
-    }
+    // No permission request: launchImageLibraryAsync uses the system Photo Picker,
+    // which needs none (and Play restricts broad READ_MEDIA_* permissions).
     // No allowsEditing/aspect here (unlike the avatar picker): cropping
     // flattens an animated GIF to a single frame, and posts shouldn't be
     // forced to a square anyway.

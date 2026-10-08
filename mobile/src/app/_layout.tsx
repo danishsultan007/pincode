@@ -1,4 +1,5 @@
 import React from 'react';
+import { reportError, wrapRoot } from '@/lib/sentry';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Stack, ThemeProvider, DarkTheme, DefaultTheme } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -37,7 +38,7 @@ const navTheme = {
 
 // Root layout. Provider order per MOBILE-PLAN.md §4:
 //   QueryProvider > AuthProvider > LocationProvider > ToastProvider > ActionSheetProvider > PushProvider
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontAssets);
   if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
@@ -81,6 +82,24 @@ export default function RootLayout() {
       </QueryProvider>
       </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+export default wrapRoot(RootLayout);
+
+// Expo Router renders this instead of the app when a screen throws.
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  React.useEffect(() => reportError(error), [error]);
+  return (
+    <View style={styles.wrap}>
+      <Text variant="title" style={styles.center}>
+        Something went wrong
+      </Text>
+      <Text variant="body" style={styles.center}>
+        The app hit an unexpected problem. Try again — if it keeps happening, please send us feedback.
+      </Text>
+      <Button label="Try again" onPress={() => retry()} />
+    </View>
   );
 }
 

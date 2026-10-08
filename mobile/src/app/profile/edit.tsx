@@ -47,11 +47,8 @@ export default function EditProfile() {
   if (!me) return null;
 
   const pickAvatar = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      toast.show('Photo library access is needed to change your avatar.');
-      return;
-    }
+    // No permission request: launchImageLibraryAsync uses the system Photo Picker,
+    // which needs none (and Play restricts broad READ_MEDIA_* permissions).
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,

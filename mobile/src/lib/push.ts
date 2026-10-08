@@ -31,6 +31,12 @@ Notifications.setNotificationHandler({
   },
 });
 
+// Build-time project id from app.config.ts (extra.eas.projectId), falling back to the env var.
+function easProjectId(): string {
+  const fromConfig = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
+  return fromConfig || env.easProjectId;
+}
+
 // Whether this runtime can register for push at all (MOBILE-PLAN.md §3):
 // never on web, never in a simulator/emulator, never in Expo Go on Android
 // (unsupported since SDK 53), and never without an EAS project id.
@@ -38,7 +44,7 @@ export function canRegisterForPush(): boolean {
   if (Platform.OS === 'web') return false;
   if (!Device.isDevice) return false;
   if (Platform.OS === 'android' && Constants.executionEnvironment === 'storeClient') return false;
-  if (!env.easProjectId) return false;
+  if (!easProjectId()) return false;
   return true;
 }
 
@@ -64,7 +70,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     }
     if (status !== 'granted') return null;
 
-    const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId: env.easProjectId });
+    const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId: easProjectId() });
     const token = tokenResponse.data;
 
     const { error } = await supabase.rpc('register_push_token', {

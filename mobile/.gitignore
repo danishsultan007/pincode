@@ -4,3 +4,6 @@ dist/
 .env
 ios/
 android/
+
+# Firebase config (FCM push) - delivered to EAS builds as a file env var
+google-services.json

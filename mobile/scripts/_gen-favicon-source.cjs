@@ -16,7 +16,7 @@ const path = require('path');
 const zlib = require('zlib');
 
 const SIZE = 256; // source resolution; expo's export step downsamples to 16/32/48
-const RED = [0xdc, 0x26, 0x26, 255];
+const RED = [0xf0, 0x44, 0x38, 255]; // tokens.logoRed
 const TRANSPARENT = [0, 0, 0, 0];
 
 // --- geometry, in the SVG's 24x24 viewBox units ---

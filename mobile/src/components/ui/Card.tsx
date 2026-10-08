@@ -29,7 +29,7 @@ export function Card({ onPress, variant = 'default', style, children, ...rest }:
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="link"
       onPress={onPress}
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >

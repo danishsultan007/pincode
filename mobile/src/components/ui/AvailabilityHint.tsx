@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Text } from './Text';
 import { colors } from '@/theme/tokens';
 
-export type AvailabilityState = 'idle' | 'checking' | 'ok' | 'taken' | 'invalid' | 'error';
+export type AvailabilityState = 'idle' | 'checking' | 'ok' | 'taken' | 'reserved' | 'invalid' | 'error';
 
 export type AvailabilityHintProps = {
   state: AvailabilityState;
@@ -15,6 +15,7 @@ const COLOR: Record<AvailabilityState, string> = {
   checking: colors.ink3,
   ok: colors.success,
   taken: colors.danger,
+  reserved: colors.danger,
   invalid: colors.danger,
   error: colors.danger,
 };

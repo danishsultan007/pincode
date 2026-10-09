@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { changeUsername, usernameAvailable } from '@/api/profiles';
-import { isValidUsername } from '@/lib/username';
+import { isReservedUsername, isValidUsername } from '@/lib/username';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
 import { space } from '@/theme/tokens';
@@ -36,6 +36,10 @@ export default function ChangeUsername() {
     }
     if (!isValidUsername(value)) {
       setState('invalid');
+      return;
+    }
+    if (isReservedUsername(value)) {
+      setState('reserved');
       return;
     }
     setState('checking');
@@ -78,6 +82,8 @@ export default function ChangeUsername() {
         ? copy.onboarding.available
         : state === 'taken'
           ? copy.onboarding.taken
+          : state === 'reserved'
+          ? copy.onboarding.reserved
           : state === 'invalid'
             ? copy.onboarding.usernameHint
             : state === 'error'

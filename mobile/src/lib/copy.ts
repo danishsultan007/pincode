@@ -102,6 +102,7 @@ export const copy = {
     checking: 'Checking…',
     available: 'Available',
     taken: 'Taken',
+    reserved: "That username isn't available. Names with words like admin, support, staff or pincode are reserved.",
     checkFailed: "Couldn't check — check your connection and try again.",
     usernameHint: '3–20 letters, numbers or _, starting with a letter',
     phoneNote: 'Used for account safety. Never shown publicly.',

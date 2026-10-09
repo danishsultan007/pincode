@@ -17,7 +17,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useLocation } from '@/providers/LocationProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { acceptTerms, completeOnboarding, phoneAvailable, suggestUsernames, usernameAvailable } from '@/api/profiles';
-import { isValidUsername } from '@/lib/username';
+import { isReservedUsername, isValidUsername } from '@/lib/username';
 import { normalizeIndianPhone } from '@/lib/phone';
 import { PINCODES } from '@/lib/pincodes';
 import { INTERESTS } from '@/lib/constants';
@@ -91,6 +91,10 @@ export default function Onboarding() {
     }
     if (!isValidUsername(value)) {
       setUsernameState('invalid');
+      return;
+    }
+    if (isReservedUsername(value)) {
+      setUsernameState('reserved');
       return;
     }
     setUsernameState('checking');
@@ -198,6 +202,8 @@ export default function Onboarding() {
         ? copy.onboarding.available
         : usernameState === 'taken'
           ? copy.onboarding.taken
+          : usernameState === 'reserved'
+          ? copy.onboarding.reserved
           : usernameState === 'invalid'
             ? copy.onboarding.usernameHint
             : usernameState === 'error'

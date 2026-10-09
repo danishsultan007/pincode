@@ -9,3 +9,6 @@ Thumbs.db
 
 # Supabase CLI local state (linked project ref etc.)
 supabase/.temp/
+
+# Local secrets (database passwords etc.)
+.secrets/

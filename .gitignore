@@ -6,3 +6,6 @@ Thumbs.db
 !.vscode/extensions.json
 
 # mobile/ has its own .gitignore for node_modules, .env, .expo, dist, ios, android
+
+# Supabase CLI local state (linked project ref etc.)
+supabase/.temp/

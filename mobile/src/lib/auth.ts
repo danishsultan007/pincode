@@ -85,13 +85,19 @@ export async function signInWithIdentifier(identifier: string, password: string)
   });
   if (error) {
     // On a non-2xx response supabase-js puts the Response in error.context.
-    // No `context` means the request never got a response (offline, relay failure).
-    let message = (error as { context?: Response }).context ? 'Invalid login credentials' : error.message;
+    // A non-2xx reply carries the Response in error.context. For a request that
+    // never got a reply (offline, CORS failure, function missing) supabase-js puts
+    // the underlying Error there instead, so check the type rather than presence.
+    const ctx = (error as { context?: unknown }).context;
+    if (typeof Response === 'undefined' || !(ctx instanceof Response)) {
+      throw new Error("Couldn't connect. Check your internet connection and try again.");
+    }
+    let message = ctx.status === 404 ? 'Sign-in is temporarily unavailable. Try your email instead.' : 'Invalid login credentials';
     try {
-      const body = await (error as { context?: Response }).context?.json();
+      const body = await ctx.json();
       if (body?.message) message = body.message;
     } catch {
-      // Network failure or non-JSON body: keep the generic message.
+      // Non-JSON body: keep the generic message.
     }
     throw new Error(message);
   }

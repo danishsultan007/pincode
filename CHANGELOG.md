@@ -9,7 +9,11 @@
   - **Play (en-IN, max 500 chars)**: text for Play Console "What's new". Only needed for native builds uploaded to Play (OTA updates never appear in Play).
   - **Internal**: migrations, Edge Functions, config, risks, rollback notes. Never shared.
 - `scripts\release-check.ps1` warns if there is no heading containing the current `version` from `mobile/app.config.ts`.
-- Keep an `## Unreleased
+- Keep an `## Unreleased` section at the top for work that has landed but not shipped; rename it to the version when releasing.
+
+---
+
+## Unreleased
 
 (nothing yet)
 

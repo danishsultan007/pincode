@@ -14,7 +14,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/providers/AuthProvider';
-import { confirmAsync } from '@/lib/confirm';
 import { useAuthorAnswers, useAuthorPosts, usePublicProfile } from '@/hooks/useProfile';
 import { PostCard as PostCardComponent } from '@/components/post/PostCard';
 import { StatsRow } from '@/components/profile/StatsRow';
@@ -27,7 +26,7 @@ type ProfileTabValue = 'posts' | 'answers';
 
 export default function ProfileTab() {
   const router = useRouter();
-  const { me, signOut } = useAuth();
+  const { me } = useAuth();
   const username = me?.profile.username ?? undefined;
   const { data: bundle } = usePublicProfile(username);
   const [tab, setTab] = useState<ProfileTabValue>('posts');
@@ -36,13 +35,6 @@ export default function ProfileTab() {
 
   if (!me) return null;
   const { profile } = me;
-
-  const handleSignOut = async () => {
-    const ok = await confirmAsync(copy.settings.signOut, 'Are you sure you want to sign out?');
-    if (!ok) return;
-    await signOut();
-    router.replace('/welcome');
-  };
 
   return (
     <Screen scroll edges={['top']}>
@@ -71,8 +63,6 @@ export default function ProfileTab() {
         <Text variant="meta">{joinedLabel(profile.created_at)}</Text>
         <View style={styles.actionsRow}>
           <Button label={copy.profile.editProfile} variant="ghost" size="sm" onPress={() => router.push('/profile/edit')} />
-          <Button label={copy.profile.settings} variant="ghost" size="sm" onPress={() => router.push('/settings')} />
-          <Button label={copy.settings.signOut} variant="ghost" size="sm" onPress={handleSignOut} />
         </View>
       </View>
 

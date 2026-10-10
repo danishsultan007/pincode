@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
@@ -53,6 +53,26 @@ function getMenuPos(anchor: DOMRect | null, menuH: number | null): { left: numbe
   return { left, top: EDGE, maxHeight: vh - 2 * EDGE };
 }
 
+// Android dropdown position: opens under the touch point (flush right when the
+// tap was in the right half, like a kebab menu), flips above if it would run
+// off the bottom, and is centred when there was no recent touch.
+function androidMenuPos(
+  pt: { x: number; y: number } | null,
+  menuH: number | null,
+  vw: number,
+  vh: number,
+  insets: { top: number; bottom: number }
+): { left: number; top: number; width: number; maxHeight: number } {
+  const h = menuH ?? 0;
+  const width = Math.min(MENU_W, vw - 2 * EDGE);
+  const maxHeight = vh - insets.top - insets.bottom - 2 * EDGE;
+  if (!pt) return { left: (vw - width) / 2, top: Math.max(insets.top + EDGE, (vh - h) / 2), width, maxHeight };
+  const left = clamp(pt.x > vw / 2 ? pt.x + 20 - width : pt.x - 20, EDGE, vw - width - EDGE);
+  const below = pt.y + 22;
+  const top = below + h <= vh - insets.bottom - EDGE ? below : pt.y - 22 - h;
+  return { left, top: clamp(top, insets.top + EDGE, Math.max(insets.top + EDGE, vh - insets.bottom - EDGE - h)), width, maxHeight };
+}
+
 // Registers with lib/confirm.ts (see its comment) so actionSheet()/
 // confirmAsync() render an anchored dropdown / centred dialog on web instead
 // of a chain of window.confirm() dialogs — those show as ugly
@@ -71,13 +91,23 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
   const [menuH, setMenuH] = useState<number | null>(null);
   const menuRef = useRef<any>(null);
   const lastPress = useRef<{ rect: DOMRect; at: number } | null>(null);
+  const lastTouch = useRef<{ x: number; y: number; at: number } | null>(null);
+  const [touchPt, setTouchPt] = useState<{ x: number; y: number } | null>(null);
+  const win = useWindowDimensions();
+  // Real size of the Modal's full-screen host (useWindowDimensions can exclude system bars).
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  const openId = useRef(0);
 
   // Android: Alert.alert shows at most 3 buttons (the rest, incl. Cancel, are
   // silently dropped) and can't be dismissed by Back/outside-tap, so menus with
-  // 4+ options were broken. Render them as a bottom sheet in a Modal instead.
+  // 4+ options were broken. Render them as a dropdown in a Modal instead.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     registerWebActionSheetHost((title, options, cancelLabel) => {
+      const t = lastTouch.current;
+      setTouchPt(t && Date.now() - t.at < 3000 ? { x: t.x, y: t.y } : null);
+      openId.current += 1;
+      setMenuH(null);
       setState({ kind: 'actions', title, options, cancelLabel, anchor: null });
     });
     return () => registerWebActionSheetHost(null);
@@ -164,7 +194,31 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
 
   return (
     <>
-      {children}
+      {/* Android: remember where the last touch landed (call sites never pass a
+          trigger), so the menu can open next to the kebab/chip that was tapped. */}
+      <View
+        style={styles.touchRoot}
+        collapsable={false}
+        // Observe only: neither handler claims the touch. onTouchStart bubbles
+        // from every child; the capture handler is a second net.
+        onTouchStart={
+          Platform.OS === 'android'
+            ? (e) => {
+                lastTouch.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, at: Date.now() };
+              }
+            : undefined
+        }
+        onStartShouldSetResponderCapture={
+          Platform.OS === 'android'
+            ? (e) => {
+                lastTouch.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, at: Date.now() };
+                return false;
+              }
+            : undefined
+        }
+      >
+        {children}
+      </View>
       {Platform.OS === 'android' ? (
         <Modal
           visible={state?.kind === 'actions'}
@@ -174,22 +228,25 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
           navigationBarTranslucent
           onRequestClose={dismiss}
         >
-          <View style={styles.sheetHost}>
-            <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
+          <View
+            style={styles.sheetHost}
+            onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+          >
+            {/* Tap outside (or Back) closes the menu; no Cancel row needed. */}
+            <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Dismiss" />
             {state?.kind === 'actions' ? (
-              <View style={[styles.sheet, { paddingBottom: space.s3 + insets.bottom }]} accessibilityRole="menu">
-                <View style={styles.sheetHandle} />
-                <ScrollView style={styles.sheetScroll} bounces={false}>
-                  {state.title ? (
-                    <Text variant="label" style={styles.sheetTitle}>
-                      {state.title}
-                    </Text>
-                  ) : null}
+              <View
+                key={openId.current}
+                onLayout={(e) => setMenuH(e.nativeEvent.layout.height)}
+                style={[styles.dropdown, androidMenuPos(touchPt, menuH, box?.w ?? win.width, box?.h ?? win.height, insets), { opacity: menuH == null ? 0 : 1 }]}
+                accessibilityRole="menu"
+              >
+                <ScrollView bounces={false}>
                   {state.options.map((o, i) => (
                     <Pressable
                       key={i}
                       accessibilityRole="menuitem"
-                      style={({ pressed }) => [styles.sheetRow, pressed && { backgroundColor: colors.surface2 }]}
+                      style={({ pressed }) => [styles.dropdownRow, pressed && { backgroundColor: colors.surface2 }]}
                       onPress={() => {
                         setState(null);
                         // Run after the Modal has gone so a follow-up Alert/navigation isn't swallowed.
@@ -202,15 +259,6 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
                     </Pressable>
                   ))}
                 </ScrollView>
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.sheetRow, styles.sheetCancel, pressed && { backgroundColor: colors.surface2 }]}
-                  onPress={dismiss}
-                >
-                  <Text variant="body" style={styles.sheetCancelText}>
-                    {state.cancelLabel}
-                  </Text>
-                </Pressable>
               </View>
             ) : null}
           </View>
@@ -287,26 +335,20 @@ const styles = StyleSheet.create({
     boxShadow: shadow.popover,
     overflow: 'auto',
   } as any,
-  sheetHost: { flex: 1, justifyContent: 'flex-end' },
-  sheet: {
+  touchRoot: { flex: 1 },
+  sheetHost: { flex: 1 },
+  dropdown: {
+    position: 'absolute',
+    width: MENU_W,
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingTop: space.s2,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: 6,
+    elevation: 12,
+    overflow: 'hidden',
   },
-  sheetScroll: { flexGrow: 0, maxHeight: '75%' },
-  sheetTitle: { paddingHorizontal: space.s5, paddingTop: space.s2, paddingBottom: space.s1 },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: radius.pill,
-    backgroundColor: colors.lineStrong,
-    marginBottom: space.s2,
-  },
-  sheetRow: { minHeight: 52, justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: space.s5 },
-  sheetCancel: { marginTop: space.s1, borderTopWidth: 1, borderTopColor: colors.line, borderRadius: 0 },
-  sheetCancelText: { color: colors.ink2 },
+  dropdownRow: { minHeight: 48, justifyContent: 'center', paddingHorizontal: space.s4 },
   menuTitle: { paddingHorizontal: space.s3, paddingTop: space.s2, paddingBottom: space.s1 },
   menuRow: { minHeight: 44, justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: space.s3 },
   destructiveText: { color: colors.danger },

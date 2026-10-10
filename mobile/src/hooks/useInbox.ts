@@ -72,6 +72,11 @@ export function useMessages(conversationId: string | undefined) {
     queryKey: ['messages', conversationId],
     queryFn: () => chatApi.listMessages(conversationId as string),
     enabled: !!conversationId,
+    // The realtime channel only runs while the chat is open, so anything cached
+    // from an earlier visit may be missing messages: always refetch on open
+    // (the cached list still shows instantly meanwhile).
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const loadOlder = async () => {

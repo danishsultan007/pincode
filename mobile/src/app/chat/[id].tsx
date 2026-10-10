@@ -84,7 +84,12 @@ export default function ChatScreen() {
           if (isFocusedRef.current) markRead.mutate();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Messages sent between the initial fetch and the channel going live
+        // (or while it reconnects) are never delivered as events: refetch once
+        // the subscription is confirmed so nothing is missed.
+        if (status === 'SUBSCRIBED') queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      });
 
     return () => {
       supabase.removeChannel(channel);

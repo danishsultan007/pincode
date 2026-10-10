@@ -46,6 +46,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         () => {
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
           queryClient.invalidateQueries({ queryKey: ['inboxCounts'] });
+          // A new message in a chat that isn't open: mark its cached list stale
+          // (open chats refetch; closed ones refetch on next open).
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
         }
       )
       .subscribe();

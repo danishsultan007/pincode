@@ -45,7 +45,7 @@ export default function ProfileTab() {
   };
 
   return (
-    <Screen scroll>
+    <Screen scroll edges={['top']}>
       <Header
         large
         title="Profile"

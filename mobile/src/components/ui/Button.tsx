@@ -29,31 +29,38 @@ export function Button({ label, variant = 'primary', size = 'md', loading, disab
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       onPress={isDisabled ? undefined : onPress}
-      hitSlop={8}
-      style={({ pressed }) => [
-        styles.base,
-        { height: HEIGHT[size], paddingHorizontal: padX },
-        variantStyles[variant],
-        pressed && !isDisabled
-          ? [
-              { transform: [{ scale: motion.pressScale }], opacity: motion.pressOpacity },
-              variant === 'primary' ? { backgroundColor: colors.accentPressed } : null,
-            ]
-          : null,
-        isDisabled ? styles.disabled : null,
-      ]}
+      hitSlop={size === 'sm' ? { top: 6, bottom: 6, left: 8, right: 8 } : 8}
+      // Outer Pressable is layout-only and never transforms, so the hit-tested box keeps full size.
+      style={[styles.outer, { minHeight: HEIGHT[size] }]}
     >
-      {loading ? (
-        <ActivityIndicator size="small" color={textColor[variant]} />
-      ) : (
-        <View style={styles.content}>
-          {icon ? <Icon name={icon} size={size === 'sm' ? 16 : 18} color={textColor[variant]} /> : null}
-          <Text
-            variant="button"
-            style={{ color: textColor[variant], fontSize: size === 'lg' ? 16 : size === 'sm' ? 14 : 15 }}
-          >
-            {label}
-          </Text>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.base,
+            { height: HEIGHT[size], paddingHorizontal: padX },
+            variantStyles[variant],
+            pressed && !isDisabled
+              ? [
+                  { transform: [{ scale: motion.pressScale }], opacity: motion.pressOpacity },
+                  variant === 'primary' ? { backgroundColor: colors.accentPressed } : null,
+                ]
+              : null,
+            isDisabled ? styles.disabled : null,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={textColor[variant]} />
+          ) : (
+            <View style={styles.content}>
+              {icon ? <Icon name={icon} size={size === 'sm' ? 16 : 18} color={textColor[variant]} /> : null}
+              <Text
+                variant="button"
+                style={{ color: textColor[variant], fontSize: size === 'lg' ? 16 : size === 'sm' ? 14 : 15 }}
+              >
+                {label}
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </Pressable>
@@ -61,6 +68,7 @@ export function Button({ label, variant = 'primary', size = 'md', loading, disab
 }
 
 const styles = StyleSheet.create({
+  outer: { justifyContent: 'center' },
   base: {
     borderRadius: radius.pill,
     flexDirection: 'row',

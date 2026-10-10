@@ -122,7 +122,7 @@ export default function HomeTab() {
       onPress={() => router.push('/location')}
       accessibilityRole="button"
       accessibilityLabel={copy.feed.changeLocation(fullLoc)}
-      hitSlop={6}
+      hitSlop={{ top: 5, bottom: 5, left: 6, right: 6 }}
       style={[styles.locationPill, { maxWidth: wide ? 240 : 150 }]}
     >
       <Icon name="pin" size={14} color={colors.accent} />
@@ -155,7 +155,7 @@ export default function HomeTab() {
   const currentSortLabel = sortMode === 'newest' ? copy.feed.sortNewest : copy.feed.sortNearest;
 
   const SortButton = () => (
-    <Pressable style={styles.sortButton} hitSlop={6} onPress={openSort} accessibilityLabel={copy.feed.sortTitle}>
+    <Pressable style={styles.sortButton} hitSlop={{ top: 5, bottom: 5, left: 6, right: 6 }} onPress={openSort} accessibilityLabel={copy.feed.sortTitle}>
       <Text variant="secondary" style={{ fontWeight: '600' }}>
         {currentSortLabel}
       </Text>
@@ -166,6 +166,7 @@ export default function HomeTab() {
   const ViewToggle = () => (
     <View style={styles.viewToggle}>
       <Pressable
+        hitSlop={{ top: 8, bottom: 8, left: 4, right: 0 }}
         style={[styles.viewToggleBtn, viewMode === 'list' && styles.viewToggleBtnActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: viewMode === 'list' }}
@@ -175,6 +176,7 @@ export default function HomeTab() {
         <Icon name="list" size={16} color={viewMode === 'list' ? colors.ink : colors.ink3} />
       </Pressable>
       <Pressable
+        hitSlop={{ top: 8, bottom: 8, left: 0, right: 4 }}
         style={[styles.viewToggleBtn, viewMode === 'map' && styles.viewToggleBtnActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: viewMode === 'map' }}

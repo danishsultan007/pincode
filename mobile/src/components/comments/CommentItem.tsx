@@ -72,7 +72,7 @@ export function CommentItem({
               accessibilityRole="button"
               accessibilityState={{ selected: comment.my_vote }}
               onPress={onVote}
-              hitSlop={6}
+              hitSlop={8}
               style={[styles.voteChip, comment.my_vote ? styles.voteChipActive : styles.voteChipIdle]}
             >
               <Icon name="arrow-up" size={14} color={comment.my_vote ? colors.accent : colors.ink2} />

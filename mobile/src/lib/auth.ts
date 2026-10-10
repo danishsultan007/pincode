@@ -9,7 +9,59 @@ import { normalizeIndianPhone } from './phone';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export async function signInWithGoogle(): Promise<void> {
+// One code exchange per OAuth code per process. signInWithGoogle and the
+// /auth/callback route can both see the same redirect; they share this job so a
+// code is never exchanged twice (codes are single-use).
+const jobs = new Map<string, Promise<void>>();
+
+export async function handleAuthUrl(url: string): Promise<'signed_in' | 'no_code'> {
+  const p = parseAuthUrl(url);
+  if (p.error || p.errorDescription) throw new Error(p.errorDescription ?? p.error);
+  if (!p.code) return 'no_code';
+
+  let job = jobs.get(p.code);
+  if (!job) {
+    job = supabase.auth.exchangeCodeForSession(p.code).then(async ({ error }) => {
+      // A consumed code fails, which is fine if the session is already there.
+      if (error && !(await supabase.auth.getSession()).data.session) throw error;
+    });
+    jobs.set(p.code, job);
+  }
+  await job;
+  return 'signed_in';
+}
+
+// Resolves true as soon as a session exists, false after `ms`.
+export function waitForSession(ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    let done = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribe: (() => void) | undefined;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      if (timer) clearTimeout(timer);
+      unsubscribe?.();
+      resolve(ok);
+    };
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) finish(true);
+    });
+    unsubscribe = () => data.subscription.unsubscribe();
+    timer = setTimeout(() => finish(false), ms);
+    supabase.auth
+      .getSession()
+      .then(({ data: s }) => {
+        if (s.session) finish(true);
+      })
+      .catch(() => {});
+  });
+}
+
+// Web resolves 'signed_in' once the redirect to Google is kicked off (the session
+// is completed by detectSessionInUrl on /auth/callback). Native resolves
+// 'cancelled' when the user closed the browser without finishing.
+export async function signInWithGoogle(): Promise<'signed_in' | 'cancelled'> {
   if (Platform.OS === 'web') {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -19,7 +71,7 @@ export async function signInWithGoogle(): Promise<void> {
       },
     });
     if (error) throw error;
-    return;
+    return 'signed_in';
   }
 
   // exp://…/--/auth/callback in Expo Go, pincode://auth/callback in builds.
@@ -29,27 +81,42 @@ export async function signInWithGoogle(): Promise<void> {
     options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } },
   });
   if (error) throw error;
-  if (!data?.url) return;
+  if (!data?.url) return 'cancelled';
 
-  const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (res.type === 'success' && res.url) {
-    await completeAuthFromUrl(res.url);
+  // On Android the browser can resolve as 'dismiss' while the redirect arrives
+  // as a Linking event instead, so remember any redirect seen meanwhile.
+  let seen: string | undefined;
+  const sub = Linking.addEventListener('url', (e) => {
+    if (e.url.startsWith(redirectTo)) seen = e.url;
+  });
+  try {
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    const url = res.type === 'success' && res.url ? res.url : seen;
+    if (url) {
+      await handleAuthUrl(url);
+      return 'signed_in';
+    }
+    // The browser can report 'dismiss' just before the redirect event lands, or the
+    // /auth/callback route may consume the link: wait up to 3s for either a
+    // session or the redirect to show up here.
+    const deadline = Date.now() + 3000;
+    for (;;) {
+      if (seen) {
+        await handleAuthUrl(seen);
+        return 'signed_in';
+      }
+      if ((await supabase.auth.getSession()).data.session) return 'signed_in';
+      if (Date.now() >= deadline) return 'cancelled';
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  } finally {
+    sub.remove();
   }
 }
 
+// Kept for existing callers; see handleAuthUrl.
 export async function completeAuthFromUrl(url: string): Promise<void> {
-  const { queryParams } = Linking.parse(url);
-  if (queryParams?.error_description) {
-    throw new Error(String(queryParams.error_description));
-  }
-  const code = queryParams?.code;
-  if (typeof code === 'string') {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-    }
-  }
+  await handleAuthUrl(url);
 }
 
 export type ParsedAuthUrl = {
@@ -186,4 +253,14 @@ export async function sendPasswordReset(identifier: string): Promise<void> {
 export async function updatePassword(password: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
+}
+
+// Both signInWithGoogle's caller and the /auth/callback route can see the same
+// failed redirect. Whoever calls this first for a message gets to show the toast.
+let lastToast: { message: string; at: number } | null = null;
+export function claimErrorToast(message: string): boolean {
+  const now = Date.now();
+  if (lastToast && lastToast.message === message && now - lastToast.at < 10000) return false;
+  lastToast = { message, at: now };
+  return true;
 }

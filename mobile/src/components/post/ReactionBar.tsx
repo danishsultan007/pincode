@@ -29,7 +29,7 @@ export function ReactionBar({ counts, mine, onToggle }: ReactionBarProps) {
             accessibilityRole="button"
             accessibilityState={{ selected: isMine }}
             onPress={() => onToggle(r.code)}
-            hitSlop={4}
+            hitSlop={8}
             style={[styles.chip, isMine ? styles.active : styles.idle]}
           >
             <Text variant="secondary">{r.glyph}</Text>
@@ -42,7 +42,7 @@ export function ReactionBar({ counts, mine, onToggle }: ReactionBarProps) {
         );
       })}
       {!expanded ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="More reactions" onPress={() => setExpanded(true)} hitSlop={4} style={[styles.chip, styles.idle]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="More reactions" onPress={() => setExpanded(true)} hitSlop={8} style={[styles.chip, styles.idle]}>
           <Text variant="secondary" style={{ color: colors.ink2 }}>
             +
           </Text>

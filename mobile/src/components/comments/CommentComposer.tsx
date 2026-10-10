@@ -36,7 +36,7 @@ export function CommentComposer({
           <Text variant="meta" style={{ color: colors.accent }}>
             {copy.post.replyingTo(replyingTo.username)}
           </Text>
-          <IconButton name="x" label="Cancel reply" size={14} onPress={onCancelReply} />
+          <IconButton name="x" label="Cancel reply" size={14} onPress={onCancelReply} hitSlop={10} />
         </View>
       ) : null}
       <View style={styles.row}>
@@ -53,13 +53,19 @@ export function CommentComposer({
           accessibilityLabel="Send"
           onPress={onSubmit}
           disabled={disabled}
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: disabled ? colors.surface2 : colors.accent },
-            pressed && !disabled ? { transform: [{ scale: motion.pressScale }] } : null,
-          ]}
+          style={styles.sendHit}
         >
-          <Icon name="send" size={18} color={disabled ? colors.ink3 : colors.accentInk} />
+          {({ pressed }) => (
+            <View
+              style={[
+                styles.send,
+                { backgroundColor: disabled ? colors.surface2 : colors.accent },
+                pressed && !disabled ? { transform: [{ scale: motion.pressScale }] } : null,
+              ]}
+            >
+              <Icon name="send" size={18} color={disabled ? colors.ink3 : colors.accentInk} />
+            </View>
+          )}
         </Pressable>
       </View>
     </View>
@@ -88,5 +94,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.s2 },
-  send: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  sendHit: { width: 44, height: 44 },
+  send: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

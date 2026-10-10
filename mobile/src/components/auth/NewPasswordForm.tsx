@@ -30,12 +30,13 @@ export function NewPasswordForm({ submitLabel, onDone }: { submitLabel: string; 
 
   return (
     <>
-      <TextField label="New password" value={password} onChangeText={setPassword} secureTextEntry hint="At least 8 characters" />
+      <TextField label="New password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" hint="At least 8 characters" />
       <TextField
         label="Confirm new password"
         value={confirm}
         onChangeText={setConfirm}
         secureTextEntry
+        autoComplete="new-password"
         error={confirm && confirm !== password ? "Passwords don't match" : undefined}
         onSubmitEditing={submit}
       />

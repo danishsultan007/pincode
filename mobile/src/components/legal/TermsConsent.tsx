@@ -16,12 +16,12 @@ export function TermsConsent({ checked, onChange }: { checked: boolean; onChange
         accessibilityRole="checkbox"
         accessibilityState={{ checked }}
         accessibilityLabel="I am 18 or older and agree to the Terms of Service and Privacy Policy"
-        hitSlop={8}
+        hitSlop={13}
         style={[styles.box, checked ? styles.boxOn : null]}
       >
         {checked ? <Icon name="check" size={14} color={colors.accentInk} strokeWidth={3} /> : null}
       </Pressable>
-      <Text variant="bodySm" style={styles.label}>
+      <Text variant="bodySm" style={styles.label} onPress={() => onChange(!checked)}>
         I&apos;m 18 or older and agree to the{' '}
         <Text variant="bodySm" style={styles.link} onPress={() => router.push('/terms')}>
           Terms of Service

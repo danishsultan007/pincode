@@ -44,6 +44,7 @@ export default function SignIn() {
           value={identifier}
           onChangeText={setIdentifier}
           autoCapitalize="none"
+          autoComplete="username"
           placeholder="you@example.com"
           onSubmitEditing={submit}
         />
@@ -52,6 +53,7 @@ export default function SignIn() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoComplete="current-password"
           onSubmitEditing={submit}
         />
         <Button size="lg" label="Sign in" onPress={submit} loading={loading} disabled={!canSubmit} />

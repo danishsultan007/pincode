@@ -251,7 +251,13 @@ export default function Onboarding() {
                 <Chip key={s} label={s} onPress={() => setUsername(s)} />
               ))}
             </ChipRow>
-            <Button size="lg" label="Next" onPress={() => setStep(1)} disabled={!step1Valid} />
+            <Button
+              size="lg"
+              label="Next"
+              onPress={() => setStep(1)}
+              disabled={!step1Valid}
+              loading={usernameState === 'checking'}
+            />
           </View>
         ) : null}
 

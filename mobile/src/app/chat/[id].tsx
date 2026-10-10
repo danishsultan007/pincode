@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { FlatList, KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
 import { Banner } from '@/components/ui/Banner';
+import { BottomSafeArea } from '@/components/ui/BottomSafeArea';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CommentComposer } from '@/components/comments/CommentComposer';
 import { RequestBar } from '@/components/chat/RequestBar';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -41,6 +43,7 @@ export default function ChatScreen() {
   const router = useRouter();
   const toast = useToast();
   const { user, me } = useAuth();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
@@ -190,12 +193,17 @@ export default function ChatScreen() {
         left={<IconButton name="chevron-left" label="Back" onPress={() => goBack()} />}
         right={!isSystem ? <IconButton name="more" label="More actions" onPress={openMenu} /> : undefined}
       />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-      >
+      {/* behavior="padding" on both platforms: under edge-to-edge Android the
+          window may not resize for the keyboard. KeyboardAvoidingView measures
+          its frame relative to its parent (Screen's inner View), whose top sits
+          at the safe-area top inset (the Header is inside that parent, so it is
+          already part of frame.y). The offset must therefore equal the parent's
+          absolute top = insets.top. If the window does resize, the measured
+          overlap is 0 and padding adds nothing. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={insets.top}>
       <FlatList
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         data={messages ?? []}
         inverted
         keyExtractor={(item) => item.id}
@@ -205,7 +213,9 @@ export default function ChatScreen() {
         onEndReached={() => loadOlder()}
       />
 
-      {isSystem ? null : isDeclined ? (
+      {isSystem ? null : (
+      <BottomSafeArea>
+      {isDeclined ? (
         <Banner tone="neutral" text={copy.chat.notDelivered} />
       ) : iAmRecipient ? (
         <RequestBar
@@ -234,6 +244,8 @@ export default function ChatScreen() {
             disabled={alreadySentPendingRequest}
           />
         </>
+      )}
+      </BottomSafeArea>
       )}
       </KeyboardAvoidingView>
     </Screen>

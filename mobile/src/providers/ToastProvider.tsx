@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors, motion, radius, shadow, space } from '@/theme/tokens';
@@ -15,6 +16,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const DURATION_MS = 2500;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anim = useRef(new Animated.Value(0)).current;
@@ -42,8 +44,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ show }}>
       {children}
       {toast ? (
-        <View pointerEvents="box-none" style={styles.host}>
+        <View pointerEvents="box-none" style={[styles.host, { bottom: 96 + insets.bottom }]}>
           <Animated.View
+            pointerEvents={toast.actionLabel ? 'box-none' : 'none'}
             style={[
               styles.pill,
               { opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
@@ -77,7 +80,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 96,
     alignItems: 'center',
     paddingHorizontal: space.s4,
   },

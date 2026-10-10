@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
@@ -7,6 +7,8 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Icon } from '@/components/ui/Icon';
+import { BottomSafeArea } from '@/components/ui/BottomSafeArea';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CommentThread } from '@/components/comments/CommentThread';
 import { CommentComposer } from '@/components/comments/CommentComposer';
 import { usePost } from '@/hooks/usePost';
@@ -39,6 +41,7 @@ export default function ThreadScreen() {
   const toast = useToast();
   const requireAuth = useRequireAuth();
   const { user, me } = useAuth();
+  const insets = useSafeAreaInsets();
 
   // MOBILE-PLAN.md §6 Moderation flow #4: disable the composer instead of
   // letting the RLS error surface after the user has typed a reply.
@@ -159,12 +162,19 @@ export default function ThreadScreen() {
         </Text>
       </Pressable>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {/* behavior="padding" on both platforms: under edge-to-edge Android the
+          window may not resize for the keyboard. KeyboardAvoidingView measures
+          its frame relative to its parent (Screen's inner View), whose top sits
+          at the safe-area top inset (the Header is inside that parent, so it is
+          already part of frame.y). The offset must therefore equal the parent's
+          absolute top = insets.top. If the window does resize, the measured
+          overlap is 0 and padding adds nothing. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={insets.top}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           <CommentThread
             postId={postId as string}
             roots={[rebasedRoot]}
@@ -179,6 +189,7 @@ export default function ThreadScreen() {
           />
         </ScrollView>
 
+        <BottomSafeArea>
         <CommentComposer
           value={commentBody}
           onChangeText={setCommentBody}
@@ -188,6 +199,7 @@ export default function ThreadScreen() {
           onCancelReply={() => setReplyingTo(defaultReplyTarget)}
           disabled={isSuspended}
         />
+        </BottomSafeArea>
       </KeyboardAvoidingView>
     </Screen>
   );

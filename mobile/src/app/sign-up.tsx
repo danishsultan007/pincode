@@ -121,6 +121,7 @@ export default function SignUp() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoComplete="new-password"
           hint="At least 8 characters"
         />
         <TextField
@@ -128,6 +129,7 @@ export default function SignUp() {
           value={confirm}
           onChangeText={setConfirm}
           secureTextEntry
+          autoComplete="new-password"
           error={confirm && confirm !== password ? "Passwords don't match" : undefined}
           onSubmitEditing={submit}
         />

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
@@ -48,6 +48,8 @@ import { actionSheet, confirmAsync } from '@/lib/confirm';
 import { copy } from '@/lib/copy';
 import { colors, radius, space } from '@/theme/tokens';
 import { Icon } from '@/components/ui/Icon';
+import { BottomSafeArea } from '@/components/ui/BottomSafeArea';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ReactionCode } from '@/lib/constants';
 import type { CommentCard } from '@/types/models';
 import { DetailState } from '@/components/ui/DetailState';
@@ -59,6 +61,7 @@ export default function PostDetail() {
   const toast = useToast();
   const requireAuth = useRequireAuth();
   const { user, me } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const { data: post, isLoading, isError, refetch } = usePost(id);
   const { comments, tree } = useComments(id, post?.solved_comment_id);
@@ -275,12 +278,20 @@ export default function PostDetail() {
           />
         }
       />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      {/* behavior="padding" on both platforms: under edge-to-edge Android the
+          window may not resize for the keyboard. KeyboardAvoidingView measures
+          its frame relative to its parent (Screen's inner View), whose top sits
+          at the safe-area top inset (the Header is inside that parent, so it is
+          already part of frame.y). The offset must therefore equal the parent's
+          absolute top = insets.top. If the window does resize, the measured
+          overlap is 0 and padding adds nothing. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={insets.top}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {isPendingOwn ? <Banner tone="warn" text={copy.post.underReview} /> : null}
         {isSuspended ? (
           <Banner
@@ -295,7 +306,7 @@ export default function PostDetail() {
 
         <View style={styles.topRow}>
           <TypeLabel type={post.type} kind={post.kind} />
-          <Text variant="meta">
+          <Text variant="meta" numberOfLines={1} style={{ flexShrink: 1, textAlign: 'right' }}>
             {[post.area, post.pincode, typeof post.distKm === 'number' ? fmtKm(post.distKm) : null, `${timeAgo(post.created_at)} ago`]
               .filter(Boolean)
               .join(' · ')}
@@ -389,10 +400,11 @@ export default function PostDetail() {
           }}
         />
 
-        {!comments.length ? <Text variant="secondary">No answers yet.</Text> : null}
+        {!comments.length ? <Text variant="secondary">{post.type === 'ask' ? 'Be the first to answer' : 'No comments yet.'}</Text> : null}
       </ScrollView>
 
       {!isPendingOwn ? (
+        <BottomSafeArea>
         <CommentComposer
           value={commentBody}
           onChangeText={setCommentBody}
@@ -410,6 +422,7 @@ export default function PostDetail() {
           onCancelReply={() => setReplyingTo(null)}
           disabled={isSuspended}
         />
+        </BottomSafeArea>
       ) : null}
       </KeyboardAvoidingView>
     </Screen>

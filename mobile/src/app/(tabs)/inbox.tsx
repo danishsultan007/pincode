@@ -69,7 +69,7 @@ export default function InboxTab() {
   };
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <Header
         large
         title="Inbox"

@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Logo } from '@/components/ui/Logo';
 import { RadarRings } from '@/components/ui/RadarRings';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/providers/ToastProvider';
-import { signInWithGoogle } from '@/lib/auth';
+import { useAuth } from '@/providers/AuthProvider';
+import { claimErrorToast, signInWithGoogle } from '@/lib/auth';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
 import { space } from '@/theme/tokens';
@@ -15,14 +16,28 @@ import { space } from '@/theme/tokens';
 export default function Welcome() {
   const router = useRouter();
   const toast = useToast();
+  const { session } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Safety net: if a session appears while we're here (e.g. the OAuth redirect
+  // was consumed elsewhere), leave Welcome instead of looking signed out.
+  // Only while focused, so it can't race sign-in/callback screens stacked above.
+  useFocusEffect(
+    useCallback(() => {
+      if (session) router.replace('/');
+    }, [session, router]),
+  );
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
+      // 'cancelled' (user closed the browser) is silent; on success the session
+      // effect above leaves this screen.
       await signInWithGoogle();
     } catch (err) {
-      toast.show(messageFor(err));
+      const message = messageFor(err);
+      // /auth/callback may already have toasted this same failure.
+      if (claimErrorToast(message)) toast.show(message);
     } finally {
       setGoogleLoading(false);
     }

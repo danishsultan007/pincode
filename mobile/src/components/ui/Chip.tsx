@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
 import { colors, motion, radius } from '@/theme/tokens';
 
@@ -18,16 +18,21 @@ export function Chip({ label, selected, pressed, onPress }: ChipProps) {
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
       onPress={onPress}
-      hitSlop={4}
-      style={({ pressed: touching }) => [
-        styles.base,
-        selected ? styles.selected : pressed ? styles.pressedState : styles.idle,
-        touching ? { transform: [{ scale: motion.pressScale }] } : null,
-      ]}
+      hitSlop={{ top: 7, bottom: 7, left: 4, right: 4 }}
     >
-      <Text variant="secondary" style={{ color: labelColor, fontWeight: labelWeight }}>
-        {label}
-      </Text>
+      {({ pressed: touching }) => (
+        <View
+          style={[
+            styles.base,
+            selected ? styles.selected : pressed ? styles.pressedState : styles.idle,
+            touching ? { transform: [{ scale: motion.pressScale }] } : null,
+          ]}
+        >
+          <Text variant="secondary" style={{ color: labelColor, fontWeight: labelWeight }}>
+            {label}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }

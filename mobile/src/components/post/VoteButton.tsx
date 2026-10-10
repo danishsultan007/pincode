@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { colors, motion, radius, space } from '@/theme/tokens';
@@ -17,18 +17,23 @@ export function VoteButton({ count, mine, onPress, disabled }: VoteButtonProps) 
       accessibilityRole="button"
       accessibilityState={{ selected: mine, disabled }}
       onPress={disabled ? undefined : onPress}
-      hitSlop={6}
-      style={({ pressed }) => [
-        styles.base,
-        mine ? styles.active : styles.idle,
-        disabled ? styles.disabled : null,
-        pressed && !disabled ? { transform: [{ scale: motion.pressScale }] } : null,
-      ]}
+      hitSlop={8}
     >
-      <Icon name="arrow-up" size={15} color={mine ? colors.accent : colors.ink2} />
-      <Text variant="secondary" numeric style={{ color: mine ? colors.accent : colors.ink2, fontWeight: '600' }}>
-        {count}
-      </Text>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.base,
+            mine ? styles.active : styles.idle,
+            disabled ? styles.disabled : null,
+            pressed && !disabled ? { transform: [{ scale: motion.pressScale }] } : null,
+          ]}
+        >
+          <Icon name="arrow-up" size={15} color={mine ? colors.accent : colors.ink2} />
+          <Text variant="secondary" numeric style={{ color: mine ? colors.accent : colors.ink2, fontWeight: '600' }}>
+            {count}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }

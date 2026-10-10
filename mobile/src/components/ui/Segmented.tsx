@@ -23,6 +23,7 @@ export function Segmented<T extends string>({ options, value, onChange, full }: 
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(opt.value)}
+            hitSlop={{ top: 4, bottom: 4 }}
             style={[styles.segment, full ? styles.segmentFull : null, active ? styles.active : null]}
           >
             <Text variant="secondary" numberOfLines={1} style={{ color: active ? colors.ink : colors.ink2, fontWeight: active ? '700' : '500' }}>

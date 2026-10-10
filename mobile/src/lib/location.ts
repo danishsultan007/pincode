@@ -3,7 +3,7 @@
 
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
-import { DEFAULT_LOC } from './constants';
+import { DEFAULT_LOC, SUPPORT_EMAIL } from './constants';
 import { findNearestPincode, findPincodeByArea, PINCODES } from './pincodes';
 
 export type Coords = { lat: number; lng: number };
@@ -29,7 +29,7 @@ export async function getCurrentPosition(): Promise<Coords> {
 // Nominatim usage policy: max 1 request/second, and an identifying param.
 let lastNominatimAt = 0;
 const NOMINATIM_MIN_GAP_MS = 1100;
-const NOMINATIM_EMAIL = 'support@pincode.app';
+const NOMINATIM_EMAIL = SUPPORT_EMAIL;
 const reverseCache = new Map<string, GeocodeResult | null>();
 
 async function throttleNominatim(): Promise<void> {

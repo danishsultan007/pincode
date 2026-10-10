@@ -15,6 +15,7 @@ The sign-in leak and account-deletion fixes need the SQL + Edge Functions deploy
 2. `supabase login`, `supabase link --project-ref <ref>`, then:
    ```bash
    supabase functions deploy login-with-identifier --no-verify-jwt
+   supabase functions deploy request-password-reset --no-verify-jwt
    supabase functions deploy delete-account
    ```
 3. Test username sign-in and Settings → Delete account (on a throwaway account).
@@ -56,6 +57,7 @@ Buy a domain (e.g. `pincode.app` if available, or any). Then:
    ```bash
    supabase link --project-ref <prod-ref>
    supabase functions deploy login-with-identifier --no-verify-jwt
+   supabase functions deploy request-password-reset --no-verify-jwt
    supabase functions deploy delete-account
    ```
 4. Dashboard → Advisors: clear every Security and Performance warning.

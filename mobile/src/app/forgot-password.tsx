@@ -14,15 +14,15 @@ import { goBack } from '@/lib/nav';
 
 export default function ForgotPassword() {
   const toast = useToast();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const submit = async () => {
-    if (!email || loading) return;
+    if (identifier.trim().length < 3 || loading) return;
     setLoading(true);
     try {
-      await sendPasswordReset(email.trim());
+      await sendPasswordReset(identifier);
       setSent(true);
     } catch (err) {
       toast.show(messageFor(err));
@@ -40,18 +40,18 @@ export default function ForgotPassword() {
       />
       <View style={styles.form}>
         {sent ? (
-          <Text variant="body">Check your inbox for a reset link.</Text>
+          <Text variant="body">If an account matches, we've sent a password reset link to its email address. Check your inbox (and spam).</Text>
         ) : (
           <>
             <TextField
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              label="Email, username or phone"
+              placeholder="you@example.com"
+              value={identifier}
+              onChangeText={setIdentifier}
               autoCapitalize="none"
               onSubmitEditing={submit}
             />
-            <Button size="lg" label="Send reset link" onPress={submit} loading={loading} disabled={!email} />
+            <Button size="lg" label="Send reset link" onPress={submit} loading={loading} disabled={identifier.trim().length < 3} />
           </>
         )}
       </View>

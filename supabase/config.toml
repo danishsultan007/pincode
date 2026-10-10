@@ -8,3 +8,7 @@ verify_jwt = false
 # Requires a signed-in user's JWT.
 [functions.delete-account]
 verify_jwt = true
+
+# Callers are signed-out users (forgot password).
+[functions.request-password-reset]
+verify_jwt = false

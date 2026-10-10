@@ -76,7 +76,7 @@ export async function signInWithEmail(email: string, password: string) {
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function signInWithIdentifier(identifier: string, password: string) {
-  const trimmed = identifier.trim();
+  const trimmed = identifier.trim().replace(/^@/, '');
   if (EMAIL_RE.test(trimmed)) return signInWithEmail(trimmed.toLowerCase(), password);
 
   const lookup = normalizeIndianPhone(trimmed) ?? trimmed;
@@ -112,11 +112,37 @@ export async function signInWithIdentifier(identifier: string, password: string)
 
 // The reset link lands on /reset-password (not /auth/callback, which would
 // just sign the user in and go home without asking for a new password).
-export async function sendPasswordReset(email: string): Promise<void> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: Linking.createURL('reset-password'),
+// A username or phone is resolved to the account's email by the
+// request-password-reset Edge Function, so the email never reaches the client
+// and the reply is the same whether or not an account matched.
+export async function sendPasswordReset(identifier: string): Promise<void> {
+  const trimmed = identifier.trim().replace(/^@/, '');
+  const redirectTo = Linking.createURL('reset-password');
+  if (EMAIL_RE.test(trimmed)) {
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed.toLowerCase(), { redirectTo });
+    if (error) throw error;
+    return;
+  }
+
+  const lookup = normalizeIndianPhone(trimmed) ?? trimmed;
+  const { error } = await supabase.functions.invoke('request-password-reset', {
+    body: { identifier: lookup, redirectTo },
   });
-  if (error) throw error;
+  if (error) {
+    // Same as signInWithIdentifier: no Response in error.context means no reply at all.
+    const ctx = (error as { context?: unknown }).context;
+    if (typeof Response === 'undefined' || !(ctx instanceof Response)) {
+      throw new Error("Couldn't connect. Check your internet connection and try again.");
+    }
+    let message = ctx.status === 404 ? 'Password reset is temporarily unavailable. Try your email instead.' : 'Something went wrong. Try again.';
+    try {
+      const body = await ctx.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // Non-JSON body: keep the generic message.
+    }
+    throw new Error(message);
+  }
 }
 
 export async function updatePassword(password: string): Promise<void> {

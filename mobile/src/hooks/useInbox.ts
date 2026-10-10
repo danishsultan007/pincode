@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as chatApi from '@/api/chat';
 import * as notificationsApi from '@/api/notifications';
 import { useAuth } from '@/providers/AuthProvider';
+import { invalidateAfter } from '@/lib/invalidate';
 import type { ConversationRow, InboxCounts, Message, NotificationRow } from '@/types/models';
 
 // Inbox tab + chat + notifications data (MOBILE-PLAN.md §4 Inbox tab / Chat,
@@ -24,8 +25,13 @@ export function useInboxCounts() {
 }
 
 export function useStartConversation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (otherUserId: string) => chatApi.startConversation(otherUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['inboxCounts'] });
+    },
   });
 }
 
@@ -136,6 +142,7 @@ export function useBlockInChat() {
   return useMutation({
     mutationFn: (otherUserId: string) => chatApi.blockUser(user?.id as string, otherUserId),
     onSuccess: () => {
+      invalidateAfter(queryClient, 'block');
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['inboxCounts'] });
     },

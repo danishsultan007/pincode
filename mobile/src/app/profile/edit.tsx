@@ -29,7 +29,7 @@ const MAX_INTERESTS = 15;
 export default function EditProfile() {
   const router = useRouter();
   const toast = useToast();
-  const { me } = useAuth();
+  const { me, refreshMe } = useAuth();
   const location = useLocation();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
@@ -82,6 +82,7 @@ export default function EditProfile() {
           area: location.area,
           city: location.city,
         });
+        await refreshMe(); // home area lives on the profile row, which updateProfile already refreshed
       }
       toast.show('Profile updated.');
       goBack();

@@ -108,5 +108,6 @@ export async function setMuted(conversationId: string, userId: string, muted: bo
 // through respond_to_request instead). Mirrors user/[username].tsx's toggle.
 export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
   const { error } = await supabase.from('blocks').insert({ blocker_id: blockerId, blocked_id: blockedId });
-  if (error) throw error;
+  // 23505 = already blocked (stale UI): the end state is what was asked for.
+  if (error && error.code !== '23505') throw error;
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as commentsApi from '@/api/comments';
 import { useInvalidatePost } from '@/hooks/usePost';
+import { invalidateAfter, type InvalidateKind } from '@/lib/invalidate';
 import { buildCommentTree } from '@/lib/tree';
 import type { CommentCard, CommentNode } from '@/types/models';
 import type { ReactionCode } from '@/lib/constants';
@@ -20,14 +21,17 @@ export function useComments(postId: string | undefined, solvedCommentId?: string
   return { ...query, comments: query.data ?? [], tree };
 }
 
-function useInvalidateComments(postId: string) {
+function useInvalidateComments(postId: string, kind: InvalidateKind = 'comment') {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+    invalidateAfter(queryClient, kind);
+  };
 }
 
 export function useCreateComment(postId: string) {
   const invalidateComments = useInvalidateComments(postId);
-  const invalidatePost = useInvalidatePost(postId);
+  const invalidatePost = useInvalidatePost(postId, 'comment');
   return useMutation({
     mutationFn: (input: { body: string; parentId?: string | null }) =>
       commentsApi.createComment({ postId, body: input.body, parentId: input.parentId ?? null }),
@@ -39,7 +43,7 @@ export function useCreateComment(postId: string) {
 }
 
 export function useToggleCommentVote(postId: string) {
-  const invalidateComments = useInvalidateComments(postId);
+  const invalidateComments = useInvalidateComments(postId, 'comment-vote');
   return useMutation({
     mutationFn: ({ commentId, on }: { commentId: string; on: boolean }) =>
       commentsApi.toggleCommentVote(commentId, on),
@@ -48,7 +52,7 @@ export function useToggleCommentVote(postId: string) {
 }
 
 export function useToggleCommentReaction(postId: string) {
-  const invalidateComments = useInvalidateComments(postId);
+  const invalidateComments = useInvalidateComments(postId, 'comment-vote');
   return useMutation({
     mutationFn: ({ commentId, reaction, on }: { commentId: string; reaction: ReactionCode; on: boolean }) =>
       commentsApi.toggleCommentReaction(commentId, reaction, on),
@@ -58,7 +62,7 @@ export function useToggleCommentReaction(postId: string) {
 
 export function useDeleteComment(postId: string) {
   const invalidateComments = useInvalidateComments(postId);
-  const invalidatePost = useInvalidatePost(postId);
+  const invalidatePost = useInvalidatePost(postId, 'comment');
   return useMutation({
     mutationFn: (commentId: string) => commentsApi.deleteComment(commentId),
     onSuccess: () => {
@@ -70,7 +74,7 @@ export function useDeleteComment(postId: string) {
 
 export function useMarkSolved(postId: string) {
   const invalidateComments = useInvalidateComments(postId);
-  const invalidatePost = useInvalidatePost(postId);
+  const invalidatePost = useInvalidatePost(postId, 'comment');
   return useMutation({
     mutationFn: (commentId: string | null) => commentsApi.markSolved(postId, commentId),
     onSuccess: () => {

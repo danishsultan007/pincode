@@ -14,6 +14,7 @@ import { PushProvider } from '@/providers/PushProvider';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { UpdateRequiredGate } from '@/components/UpdateRequiredGate';
+import { UpdateBanner } from '@/components/UpdateBanner';
 import { isConfigured } from '@/lib/env';
 import { fontAssets } from '@/theme/fonts';
 import { colors, scheme, space } from '@/theme/tokens';
@@ -73,6 +74,7 @@ function RootLayout() {
                         <Stack.Screen name="community/new" options={{ presentation: 'modal' }} />
                         <Stack.Screen name="report" options={{ presentation: 'modal' }} />
                       </Stack>
+                      <UpdateBanner />
                     </UpdateRequiredGate>
                   ) : (
                     <SetupNeeded />

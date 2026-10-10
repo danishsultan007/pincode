@@ -3,6 +3,7 @@ import * as profilesApi from '@/api/profiles';
 import * as postsApi from '@/api/posts';
 import * as commentsApi from '@/api/comments';
 import { useAuth } from '@/providers/AuthProvider';
+import { invalidateAfter } from '@/lib/invalidate';
 import type { CommentCard, PostCard, PublicProfileBundle } from '@/types/models';
 
 // Profile Posts/Answers tabs (MOBILE-PLAN.md §4 Profile / Public profile).
@@ -41,7 +42,7 @@ export function useUpdateProfile() {
     },
     onSuccess: async () => {
       await refreshMe();
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      invalidateAfter(queryClient, 'profile');
     },
   });
 }
@@ -68,6 +69,6 @@ export function useUnblockUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => profilesApi.unblockUser(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked-users'] }),
+    onSuccess: () => invalidateAfter(queryClient, 'block'),
   });
 }

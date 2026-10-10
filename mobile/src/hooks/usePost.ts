@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as postsApi from '@/api/posts';
 import { useAuth } from '@/providers/AuthProvider';
+import { invalidateAfter, type InvalidateKind } from '@/lib/invalidate';
 import type { PostCard, PostType } from '@/types/models';
 
 // Post detail (MOBILE-PLAN.md §4 Post detail). Threaded comments (reads,
@@ -17,18 +18,16 @@ export function usePost(id: string | undefined) {
 // Exported so hooks/useComments.ts (useMarkSolved, useCreateComment) can
 // invalidate the post/feed caches too — comment_count, answer_count and
 // solved_comment_id all live on the post.
-export function useInvalidatePost(postId: string) {
+export function useInvalidatePost(postId: string, kind: InvalidateKind = 'post-edited') {
   const queryClient = useQueryClient();
   return () => {
     queryClient.invalidateQueries({ queryKey: ['post', postId] });
-    queryClient.invalidateQueries({ queryKey: ['feed'] });
-    queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    queryClient.invalidateQueries({ queryKey: ['feed-search'] });
+    invalidateAfter(queryClient, kind);
   };
 }
 
 export function useTogglePostVote(postId: string) {
-  const invalidate = useInvalidatePost(postId);
+  const invalidate = useInvalidatePost(postId, 'vote');
   return useMutation({
     mutationFn: (on: boolean) => postsApi.togglePostVote(postId, on),
     onSuccess: invalidate,
@@ -36,7 +35,7 @@ export function useTogglePostVote(postId: string) {
 }
 
 export function useTogglePostReaction(postId: string) {
-  const invalidate = useInvalidatePost(postId);
+  const invalidate = useInvalidatePost(postId, 'vote');
   return useMutation({
     mutationFn: ({ reaction, on }: { reaction: string; on: boolean }) =>
       postsApi.togglePostReaction(postId, reaction, on),
@@ -61,7 +60,7 @@ export function useMarkPostResolved(postId: string) {
 }
 
 export function useDeletePost(postId: string) {
-  const invalidate = useInvalidatePost(postId);
+  const invalidate = useInvalidatePost(postId, 'post-created');
   return useMutation({
     mutationFn: () => postsApi.deletePost(postId),
     onSuccess: invalidate,
@@ -84,10 +83,7 @@ export function useCreatePost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: postsApi.CreatePostInput) => postsApi.createPost(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    },
+    onSuccess: () => invalidateAfter(queryClient, 'post-created'),
   });
 }
 

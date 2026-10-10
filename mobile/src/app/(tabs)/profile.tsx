@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
@@ -27,6 +28,7 @@ type ProfileTabValue = 'posts' | 'answers';
 export default function ProfileTab() {
   const router = useRouter();
   const { me } = useAuth();
+  useRefreshOnFocus([['me'], ['profile', me?.profile.username], ['author-posts', me?.profile.id], ['author-answers', me?.profile.id]]);
   const username = me?.profile.username ?? undefined;
   const { data: bundle } = usePublicProfile(username);
   const [tab, setTab] = useState<ProfileTabValue>('posts');

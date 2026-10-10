@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateAfter } from '@/lib/invalidate';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
@@ -65,7 +66,7 @@ export default function ChangeUsername() {
     try {
       await changeUsername(username.trim());
       await refreshMe();
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      invalidateAfter(queryClient, 'profile');
       toast.show('Username updated.');
       goBack();
     } catch (err) {

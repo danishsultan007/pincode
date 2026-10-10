@@ -5,6 +5,7 @@ import * as postsApi from '@/api/posts';
 import { useAuth } from '@/providers/AuthProvider';
 import { useLocation } from '@/providers/LocationProvider';
 import { haversineKm } from '@/lib/geo';
+import { invalidateAfter } from '@/lib/invalidate';
 import type { CommunityCard, CommunityKind } from '@/types/models';
 import type { CommunityCategory } from '@/lib/constants';
 
@@ -101,14 +102,7 @@ export function useCommunityPosts(communityId: string | undefined) {
 
 function useInvalidateCommunities() {
   const queryClient = useQueryClient();
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ['communities-near'] });
-    queryClient.invalidateQueries({ queryKey: ['my-communities'] });
-    queryClient.invalidateQueries({ queryKey: ['community'] });
-    queryClient.invalidateQueries({ queryKey: ['community-by-id'] });
-    queryClient.invalidateQueries({ queryKey: ['community-members'] });
-    queryClient.invalidateQueries({ queryKey: ['community-posts'] });
-  };
+  return () => invalidateAfter(queryClient, 'community');
 }
 
 export function useJoinCommunity() {
@@ -206,8 +200,7 @@ export function useModSetPostRemoved(postId: string) {
       communitiesApi.modSetPostRemoved(postId, removed, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['post', postId] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-      queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      invalidateAfter(queryClient, 'moderation');
     },
   });
 }

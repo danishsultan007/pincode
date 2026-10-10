@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
@@ -21,7 +22,10 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { useAuthorAnswers, useAuthorPosts, usePublicProfile } from '@/hooks/useProfile';
 import { useStartConversation } from '@/hooks/useInbox';
-import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateAfter } from '@/lib/invalidate';
+import { blockUser } from '@/api/chat';
+import { unblockUser } from '@/api/profiles';
 import { joinedLabel, timeAgo } from '@/lib/format';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
@@ -39,6 +43,8 @@ export default function PublicProfile() {
   const router = useRouter();
   const toast = useToast();
   const { session, user } = useAuth();
+  const queryClient = useQueryClient();
+  useRefreshOnFocus([['profile', username]]);
   const { data: bundle, isLoading, isError, refetch } = usePublicProfile(username);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<ProfileTabValue>('posts');
@@ -78,11 +84,11 @@ export default function PublicProfile() {
     setBusy(true);
     try {
       if (viewer.i_blocked) {
-        await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', profile.id);
+        await unblockUser(profile.id);
       } else {
-        await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: profile.id });
+        await blockUser(user.id, profile.id);
       }
-      await refetch();
+      invalidateAfter(queryClient, 'block'); // refetches this profile too
     } catch (err) {
       toast.show(messageFor(err));
     } finally {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -27,17 +27,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
+  const prevUid = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      prevUid.current = data.session?.user?.id ?? null;
       setSession(data.session ?? null);
       setLoading(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      // Session ended or a different account signed in without going through
+      // signOut() (expired refresh token, switch): drop everything cached for the
+      // previous user so none of their data shows for the next one.
+      const nextUid = nextSession?.user?.id ?? null;
+      if (prevUid.current && prevUid.current !== nextUid) queryClient.clear();
+      else if (!prevUid.current && nextUid) queryClient.invalidateQueries(); // cached while signed out: per-viewer fields are stale
+      prevUid.current = nextUid;
       setSession(nextSession);
       setLoading(false);
       queryClient.invalidateQueries({ queryKey: ['me'] });

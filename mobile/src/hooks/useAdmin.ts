@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { invalidateAfter } from '@/lib/invalidate';
 import * as adminApi from '@/api/admin';
 import type { ReportCategory } from '@/lib/constants';
 import type { ReportTarget } from '@/types/models';
@@ -70,6 +71,7 @@ function useInvalidateAdmin() {
     queryClient.invalidateQueries({ queryKey: ['admin-queue-item'] });
     queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
     queryClient.invalidateQueries({ queryKey: ['admin-target'] });
+    invalidateAfter(queryClient, 'moderation');
     if (userId) {
       queryClient.invalidateQueries({ queryKey: ['admin-profile', userId] });
       queryClient.invalidateQueries({ queryKey: ['admin-strikes', userId] });

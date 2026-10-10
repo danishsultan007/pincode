@@ -41,7 +41,10 @@ import {
 } from '@/hooks/useComments';
 import { useCommunityById, useModSetPostRemoved } from '@/hooks/useCommunities';
 import { useStartConversation } from '@/hooks/useInbox';
-import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateAfter } from '@/lib/invalidate';
+import { blockUser } from '@/api/chat';
+import { unblockUser } from '@/api/profiles';
 import { fmtKm, fmtWhen, timeAgo } from '@/lib/format';
 import { messageFor } from '@/lib/errors';
 import { actionSheet, confirmAsync } from '@/lib/confirm';
@@ -61,6 +64,7 @@ export default function PostDetail() {
   const toast = useToast();
   const requireAuth = useRequireAuth();
   const { user, me } = useAuth();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
 
   const { data: post, isLoading, isError, refetch } = usePost(id);
@@ -163,12 +167,13 @@ export default function PostDetail() {
     if (!requireAuth() || !user) return;
     try {
       if (isBlocked) {
-        await supabase.from('blocks').delete().eq('blocker_id', user.id).eq('blocked_id', post.author_id);
+        await unblockUser(post.author_id);
         setIsBlocked(false);
       } else {
-        await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: post.author_id });
+        await blockUser(user.id, post.author_id);
         setIsBlocked(true);
       }
+      invalidateAfter(queryClient, 'block');
     } catch (err) {
       toast.show(messageFor(err));
     }

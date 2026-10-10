@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
@@ -30,6 +31,7 @@ type Distance = (typeof DISTANCES)[number];
 // list. "Start a community" -> community/new (P6 eligibility gate).
 export default function CommunitiesTab() {
   const router = useRouter();
+  useRefreshOnFocus([['my-communities'], ['communities-near'], ['can-create-community']]);
   const toast = useToast();
   const requireAuth = useRequireAuth();
 

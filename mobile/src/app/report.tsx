@@ -9,7 +9,9 @@ import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { submitReport, markPostReportedLocally } from '@/api/moderation';
-import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateAfter } from '@/lib/invalidate';
+import { blockUser } from '@/api/chat';
 import { messageFor } from '@/lib/errors';
 import { REPORT_CATEGORIES } from '@/lib/constants';
 import type { ReportCategory } from '@/lib/constants';
@@ -34,6 +36,7 @@ type ReportParams = {
 export default function ReportModal() {
   const toast = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { targetType, targetId, conversationId, userId } = useLocalSearchParams<ReportParams>();
 
   const [category, setCategory] = useState<ReportCategory | null>(null);
@@ -59,7 +62,8 @@ export default function ReportModal() {
       });
       if (targetType === 'post') markPostReportedLocally(targetId);
       if (showBlockOption && alsoBlock && blockTargetId && user) {
-        await supabase.from('blocks').insert({ blocker_id: user.id, blocked_id: blockTargetId });
+        await blockUser(user.id, blockTargetId);
+        invalidateAfter(queryClient, 'block');
       }
       toast.show(copy.report.submitted);
       goBack();

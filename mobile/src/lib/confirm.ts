@@ -48,19 +48,25 @@ export function confirmAsync(title: string, message?: string, options: ConfirmOp
   }
 
   return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: cancelLabel, style: 'cancel', onPress: () => resolve(false) },
-      {
-        text: confirmLabel,
-        style: destructive ? 'destructive' : 'default',
-        onPress: () => resolve(true),
-      },
-    ]);
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: cancelLabel, style: 'cancel', onPress: () => resolve(false) },
+        {
+          text: confirmLabel,
+          style: destructive ? 'destructive' : 'default',
+          onPress: () => resolve(true),
+        },
+      ],
+      // Android: tapping outside / Back dismisses instead of trapping the user.
+      { cancelable: true, onDismiss: () => resolve(false) }
+    );
   });
 }
 
-// `ActionSheetIOS` on iOS, `Alert.alert` on Android, and the registered
-// ActionSheetProvider sheet on web.
+// `ActionSheetIOS` on iOS; the registered ActionSheetProvider sheet on web and
+// Android (Alert.alert only shows 3 buttons, so it is just a fallback).
 export function actionSheet(title: string, options: ActionSheetOption[], cancelLabel = copy.common.cancel): void {
   if (Platform.OS === 'ios') {
     ActionSheetIOS.showActionSheetWithOptions(
@@ -91,6 +97,12 @@ export function actionSheet(title: string, options: ActionSheetOption[], cancelL
         return;
       }
     }
+    return;
+  }
+
+  // Android: the provider's bottom sheet (Alert.alert caps at 3 buttons).
+  if (webActionSheetHost) {
+    webActionSheetHost(title, options, cancelLabel);
     return;
   }
 

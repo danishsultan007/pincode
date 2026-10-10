@@ -12,8 +12,7 @@ export type SheetProps = {
 
 // A modal body wrapper: a drag handle, an optional title row with a close
 // button, and the content. Used by every screen presented with
-// `presentation: 'modal'` (compose, location, report, community/new), and by
-// the plain-list fallback for lib/confirm.ts's actionSheet() on non-iOS.
+// `presentation: 'modal'` (compose, location, report, community/new).
 export function Sheet({ title, onClose, children }: SheetProps) {
   return (
     <View style={styles.wrap}>

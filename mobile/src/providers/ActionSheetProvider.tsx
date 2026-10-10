@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import {
@@ -61,13 +62,26 @@ function getMenuPos(anchor: DOMRect | null, menuH: number | null): { left: numbe
 // whatever element the user last pressed (captured via capture-phase
 // pointerdown/keydown listeners on `document`, since call sites never pass a
 // trigger element), or centred if there's no usable anchor. confirmAsync()
-// renders as a centred dialog. Native (iOS ActionSheetIOS, Android
-// Alert.alert) is unaffected — this provider only registers itself on web.
+// renders as a centred dialog. iOS uses ActionSheetIOS; Android
+// renders actionSheet() as a bottom sheet in a Modal (Alert.alert caps at 3
+// buttons); confirmAsync() stays on Alert.alert on native.
 export function ActionSheetProvider({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
   const [state, setState] = useState<SheetState>(null);
   const [menuH, setMenuH] = useState<number | null>(null);
   const menuRef = useRef<any>(null);
   const lastPress = useRef<{ rect: DOMRect; at: number } | null>(null);
+
+  // Android: Alert.alert shows at most 3 buttons (the rest, incl. Cancel, are
+  // silently dropped) and can't be dismissed by Back/outside-tap, so menus with
+  // 4+ options were broken. Render them as a bottom sheet in a Modal instead.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    registerWebActionSheetHost((title, options, cancelLabel) => {
+      setState({ kind: 'actions', title, options, cancelLabel, anchor: null });
+    });
+    return () => registerWebActionSheetHost(null);
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -151,7 +165,58 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
   return (
     <>
       {children}
-      {state?.kind === 'actions' ? (
+      {Platform.OS === 'android' ? (
+        <Modal
+          visible={state?.kind === 'actions'}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={dismiss}
+        >
+          <View style={styles.sheetHost}>
+            <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
+            {state?.kind === 'actions' ? (
+              <View style={[styles.sheet, { paddingBottom: space.s3 + insets.bottom }]} accessibilityRole="menu">
+                <View style={styles.sheetHandle} />
+                <ScrollView style={styles.sheetScroll} bounces={false}>
+                  {state.title ? (
+                    <Text variant="label" style={styles.sheetTitle}>
+                      {state.title}
+                    </Text>
+                  ) : null}
+                  {state.options.map((o, i) => (
+                    <Pressable
+                      key={i}
+                      accessibilityRole="menuitem"
+                      style={({ pressed }) => [styles.sheetRow, pressed && { backgroundColor: colors.surface2 }]}
+                      onPress={() => {
+                        setState(null);
+                        // Run after the Modal has gone so a follow-up Alert/navigation isn't swallowed.
+                        setTimeout(o.onPress, 250);
+                      }}
+                    >
+                      <Text variant="body" style={o.destructive ? styles.destructiveText : undefined}>
+                        {o.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.sheetRow, styles.sheetCancel, pressed && { backgroundColor: colors.surface2 }]}
+                  onPress={dismiss}
+                >
+                  <Text variant="body" style={styles.sheetCancelText}>
+                    {state.cancelLabel}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+        </Modal>
+      ) : null}
+      {Platform.OS !== 'android' && state?.kind === 'actions' ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Dismiss" />
           <View
@@ -222,6 +287,26 @@ const styles = StyleSheet.create({
     boxShadow: shadow.popover,
     overflow: 'auto',
   } as any,
+  sheetHost: { flex: 1, justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingTop: space.s2,
+  },
+  sheetScroll: { flexGrow: 0, maxHeight: '75%' },
+  sheetTitle: { paddingHorizontal: space.s5, paddingTop: space.s2, paddingBottom: space.s1 },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.lineStrong,
+    marginBottom: space.s2,
+  },
+  sheetRow: { minHeight: 52, justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: space.s5 },
+  sheetCancel: { marginTop: space.s1, borderTopWidth: 1, borderTopColor: colors.line, borderRadius: 0 },
+  sheetCancelText: { color: colors.ink2 },
   menuTitle: { paddingHorizontal: space.s3, paddingTop: space.s2, paddingBottom: space.s1 },
   menuRow: { minHeight: 44, justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: space.s3 },
   destructiveText: { color: colors.danger },

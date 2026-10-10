@@ -16,6 +16,7 @@
 ## Unreleased
 
 ### Internal
+- Web build fix for Cloudflare Pages dropping `node_modules` (fonts and router icons now served from assets/vendor).
 - Security hardening from the audit:
   - Fixed null-auth checks in database functions (an unauthenticated caller no longer slips past `auth.uid()` comparisons).
   - Revoked anon access to RPCs that only signed-in users need.

@@ -371,6 +371,7 @@ Supabase -> Authentication -> Users, and Logs -> Auth / Edge Functions.
   git push origin main:production
   ```
   Web uses the prod backend, so the same "DB first" rule applies.
+  Cloudflare builds with `npm run export:web:cf` (runs `scripts/fix-web-assets.cjs`, then checks every `/assets/...` URL exists). After a web deploy, confirm a `/assets/vendor/...ttf` URL serves a font (content-type font/ttf), not index.html.
   **Security headers:** `mobile/public/_headers` is copied into `dist` by `expo export` and read by Cloudflare Pages. The CSP ships as `Content-Security-Policy-Report-Only` first, so nothing breaks while it is tuned. After a deploy, open https://pincode-a54.pages.dev with the browser console open, use the app (map, login, images, location search) and look for "[Report Only]" violations. When clean, rename the header in `_headers` to `Content-Security-Policy` and redeploy. If you add a new external host (images, API, tiles), add it to the CSP at the same time.
 
 ### EAS free-tier limits (check expo.dev -> Usage for the real numbers)

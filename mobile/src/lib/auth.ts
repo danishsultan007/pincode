@@ -52,6 +52,44 @@ export async function completeAuthFromUrl(url: string): Promise<void> {
   }
 }
 
+export type ParsedAuthUrl = {
+  code?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenHash?: string;
+  type?: string;
+  error?: string;
+  errorDescription?: string;
+};
+
+// Pulls auth parameters out of a redirect URL, from the query string AND the
+// fragment. Supabase puts PKCE codes and token_hash in the query, but implicit-flow
+// links (e.g. reset emails sent by an Edge Function) arrive as
+// scheme://path#access_token=…&refresh_token=…&type=recovery, and expo-router does
+// not expose the fragment. Never log the result: it holds tokens.
+export function parseAuthUrl(url: string): ParsedAuthUrl {
+  const hashAt = url.indexOf('#');
+  const beforeHash = hashAt === -1 ? url : url.slice(0, hashAt);
+  const fragment = hashAt === -1 ? '' : url.slice(hashAt + 1);
+  const queryAt = beforeHash.indexOf('?');
+  const query = queryAt === -1 ? '' : beforeHash.slice(queryAt + 1);
+
+  const q = new URLSearchParams(query);
+  const f = new URLSearchParams(fragment);
+  // Query wins; the fragment fills in what the query lacks.
+  const get = (k: string) => q.get(k) || f.get(k) || undefined;
+
+  return {
+    code: get('code'),
+    accessToken: get('access_token'),
+    refreshToken: get('refresh_token'),
+    tokenHash: get('token_hash'),
+    type: get('type'),
+    error: get('error'),
+    errorDescription: get('error_description'),
+  };
+}
+
 export async function signUpWithEmail(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,

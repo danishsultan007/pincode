@@ -181,6 +181,27 @@ How it reaches phones: a build checks its channel for an update on launch, downl
    ```
    Then in the prod SQL editor, spot-check the new object, e.g. `select column_name from information_schema.columns where table_name = 'posts';` or `select proname from pg_proc where proname = 'new_function';`, and run the Advisors page for new Security warnings.
 
+### Security regression tests
+
+After every migration run both test files on dev, and again before any prod push:
+
+```powershell
+npx.cmd supabase db query --linked --file supabase/tests/security_rpc_access.sql
+npx.cmd supabase db query --linked --file supabase/tests/null_auth_checks.sql
+```
+
+The success signal is an error message beginning with `ALL ... PASSED` (the scripts raise it on purpose so nothing is left behind). Any other error is a failing check: fix it with a forward migration before continuing.
+
+### Incident runbook
+
+- **Leaked anon key:** the anon key is public by design, so RLS and grants are the real protection. Rotating the JWT secret logs everyone out and needs an OTA with the new key; prefer migrating to the new publishable/secret API keys, which can be rotated individually.
+- **Leaked service-role key:** rotate immediately in the Supabase dashboard, then redeploy all Edge Functions and update anywhere it was stored.
+- **Leaked DB password:** reset it in Settings > Database, then update `.secrets\*` and the GitHub secret `SUPABASE_DB_URL`.
+- **Ban a user:** `admin_issue_strike` with a severe strike, or Auth > Users > Ban user in the dashboard.
+- **Take content down:** Admin > moderation queue > remove.
+- **Abusive account flood:** temporarily disable sign-ups in Auth settings, clean up, then re-enable.
+- **Compromised Expo/EAS token:** revoke it at expo.dev > Access tokens and create a new one.
+
 **Rollback = forward-fix migration.** Free plan has no point-in-time recovery. Write a new migration that undoes or repairs the change. Restore data from the nightly encrypted dump **only** for real data loss, and restore selectively (the affected tables), never the whole database over live data.
 
 ---
@@ -336,13 +357,21 @@ Supabase -> Authentication -> Users, and Logs -> Auth / Edge Functions.
   gh run list --workflow backup.yml --limit 5 --repo danishsultan007/pincode
   ```
   Expect `SUPABASE_DB_URL` and `BACKUP_PASSPHRASE` and recent green runs. Do a one-time **decrypt drill**: download an artifact, decrypt it with the passphrase, and confirm the dump opens. A backup you've never decrypted is not a backup.
-  **Storage images are NOT in the DB backup.** Only the database is dumped.
+  **Storage images are NOT in the DB backup.** Only the database is dumped; Storage objects are not in the dump, so verify them separately after any restore.
+  **After ANY restore, verify column grants** (the dump carries them, but check):
+  ```sql
+  select grantee, table_name, column_name, privilege_type
+  from information_schema.column_privileges
+  where table_schema = 'public' and grantee in ('anon', 'authenticated') and privilege_type = 'UPDATE';
+  ```
+  The result should be limited to the same narrow set of columns as before the restore. If it lists whole tables, re-apply the grants from the migrations before opening the app to users.
 - **Supabase Pro:** upgrade (about $25/month) when tester data matters, or about 2 weeks before applying for production access. Pro adds daily backups; **(unverified)** check current Pro backup/PITR terms on the pricing page.
 - **Web (Cloudflare Pages):** deploy from a `production` branch, not `main`. After the prod DB step:
   ```powershell
   git push origin main:production
   ```
   Web uses the prod backend, so the same "DB first" rule applies.
+  **Security headers:** `mobile/public/_headers` is copied into `dist` by `expo export` and read by Cloudflare Pages. The CSP ships as `Content-Security-Policy-Report-Only` first, so nothing breaks while it is tuned. After a deploy, open https://pincode-a54.pages.dev with the browser console open, use the app (map, login, images, location search) and look for "[Report Only]" violations. When clean, rename the header in `_headers` to `Content-Security-Policy` and redeploy. If you add a new external host (images, API, tiles), add it to the CSP at the same time.
 
 ### EAS free-tier limits (check expo.dev -> Usage for the real numbers)
 

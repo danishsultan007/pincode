@@ -1,0 +1,19 @@
+# Cloudflare Pages security headers (copied into dist by `expo export`).
+#
+# The CSP ships as Report-Only first so a missed host can't break the site.
+# TO PROMOTE: open https://pincode-a54.pages.dev with the browser console open,
+# use the app (login, map, images, location search) and check for "[Report Only]"
+# violations. When there are none, rename Content-Security-Policy-Report-Only to
+# Content-Security-Policy below and redeploy.
+# frame-ancestors is ignored in Report-Only mode, so X-Frame-Options (enforced)
+# covers clickjacking until the CSP is promoted.
+#
+# Allowed hosts: Supabase (API, realtime, Storage images), Google avatars,
+# OpenStreetMap tiles (Leaflet: {s}.tile.openstreetmap.org) and Nominatim (geocoding).
+/*
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://jfvnahkskwhxgefmoiaz.supabase.co https://*.googleusercontent.com https://*.tile.openstreetmap.org; font-src 'self' data:; connect-src 'self' https://jfvnahkskwhxgefmoiaz.supabase.co wss://jfvnahkskwhxgefmoiaz.supabase.co https://nominatim.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

@@ -30,7 +30,13 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
     // expo-notifications has no web implementation; these calls throw there.
     if (Platform.OS === 'web') return;
     const goTo = (url: unknown) => {
-      if (typeof url === 'string' && url) router.push(url);
+      // Only in-app paths: expo-router would open an absolute URL (https:, javascript:, …)
+      // externally, and a payload is not trusted. "//host" is protocol-relative, so reject it.
+      if (typeof url === 'string' && /^\/(?![/\\])/.test(url)) {
+        router.push(url as Parameters<typeof router.push>[0]);
+      } else if (__DEV__) {
+        console.warn('Ignoring push url that is not an in-app path');
+      }
     };
 
     // Cold start: the app was opened by tapping a notification.

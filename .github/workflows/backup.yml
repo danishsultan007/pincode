@@ -6,6 +6,11 @@
 # The repository MUST stay private: artifacts hold personal data (encrypted, but still).
 name: Nightly database backup
 
+# Least privilege: the job only reads the repo (uploading an artifact needs no
+# GITHUB_TOKEN scope).
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: '0 21 * * *'   # 21:00 UTC = 02:30 IST
@@ -22,7 +27,10 @@ jobs:
         run: |
           set -euo pipefail
           # pg_dump must be at least as new as the server; the 17 image keeps up with Supabase.
-          docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" -Fc --no-owner --no-privileges > pincode.dump
+          # No --no-privileges on purpose: the dump must carry the GRANT/REVOKE statements
+          # (incl. column-level grants). Without them a restore would leave Supabase's default
+          # privileges in place and hand anon/authenticated broad rights on every table.
+          docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" -Fc --no-owner > pincode.dump
           # Passphrase via stdin (fd 0) so it never appears in the process list.
           printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
               --symmetric --cipher-algo AES256 -o "pincode-$(date -u +%F).dump.gpg" pincode.dump

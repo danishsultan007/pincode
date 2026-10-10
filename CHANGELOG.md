@@ -15,7 +15,15 @@
 
 ## Unreleased
 
-(nothing yet)
+### Internal
+- Security hardening from the audit:
+  - Fixed null-auth checks in database functions (an unauthenticated caller no longer slips past `auth.uid()` comparisons).
+  - Revoked anon access to RPCs that only signed-in users need.
+  - Web security headers via `mobile/public/_headers` (CSP in Report-Only mode first; promote after checking the console).
+  - Push notification taps only navigate to in-app paths (starting with a single `/`).
+  - Password reset links work for all three shapes (`?code=`, `#access_token=` fragment, `?token_hash=`) on native and web.
+  - The nightly backup keeps privileges and column grants (no `--no-privileges`) and uses read-only workflow permissions.
+  - Added security regression tests and an incident runbook (RELEASING.md).
 
 ---
 

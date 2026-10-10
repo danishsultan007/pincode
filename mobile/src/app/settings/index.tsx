@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { IconButton } from '@/components/ui/IconButton';
@@ -16,6 +16,21 @@ import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
 import { space } from '@/theme/tokens';
 import { goBack } from '@/lib/nav';
+import { currentVersion } from '@/lib/version';
+
+// Compact build diagnostic for bug reports: version, channel, update id, env.
+// Parts that don't exist (web, dev) are omitted; 'embedded' = no OTA applied.
+function versionInfo(): string {
+  const native = Platform.OS !== 'web';
+  return [
+    currentVersion() ?? 'dev',
+    native ? Updates.channel : null,
+    native ? (Updates.updateId ? Updates.updateId.slice(0, 8) : 'embedded') : null,
+    process.env.EXPO_PUBLIC_APP_ENV ?? 'dev',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 export default function Settings() {
   const router = useRouter();
@@ -96,7 +111,7 @@ export default function Settings() {
         <ListRow title={copy.settings.terms} chevron onPress={() => router.push('/terms')} />
         <ListRow title={copy.settings.privacy} chevron onPress={() => router.push('/privacy')} />
         <ListRow title={copy.settings.feedback} chevron onPress={() => router.push('/settings/feedback')} />
-        <ListRow title="Version" subtitle={Constants.expoConfig?.version ?? 'dev'} />
+        <ListRow title="Version" subtitle={versionInfo()} />
       </ListGroup>
       {me.profile.role === 'admin' ? (
         <>

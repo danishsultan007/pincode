@@ -10,5 +10,9 @@ Thumbs.db
 # Supabase CLI local state (linked project ref etc.)
 supabase/.temp/
 
+# Env files anywhere (incl. mobile/.env.devbak made by scripts\publish-ota.ps1); examples stay tracked
+.env*
+!.env.example
+
 # Local secrets (database passwords etc.)
 .secrets/

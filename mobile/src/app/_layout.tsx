@@ -13,6 +13,7 @@ import { ActionSheetProvider } from '@/providers/ActionSheetProvider';
 import { PushProvider } from '@/providers/PushProvider';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
+import { UpdateRequiredGate } from '@/components/UpdateRequiredGate';
 import { isConfigured } from '@/lib/env';
 import { fontAssets } from '@/theme/fonts';
 import { colors, scheme, space } from '@/theme/tokens';
@@ -58,19 +59,21 @@ function RootLayout() {
                     // those route files exist (P3/P6/P8) — Stack.Screen for a route that
                     // has no file yet would break the dev server, so we don't list them
                     // here in P0/P2.
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        contentStyle: { backgroundColor: colors.bg },
-                      }}
-                    >
-                      {/* Modal screens registered as their route files land (MOBILE-PLAN.md §4):
-                          compose + location (P3), community/new (P6), report (P8). */}
-                      <Stack.Screen name="compose" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="location" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="community/new" options={{ presentation: 'modal' }} />
-                      <Stack.Screen name="report" options={{ presentation: 'modal' }} />
-                    </Stack>
+                    <UpdateRequiredGate>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          contentStyle: { backgroundColor: colors.bg },
+                        }}
+                      >
+                        {/* Modal screens registered as their route files land (MOBILE-PLAN.md §4):
+                            compose + location (P3), community/new (P6), report (P8). */}
+                        <Stack.Screen name="compose" options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="location" options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="community/new" options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+                      </Stack>
+                    </UpdateRequiredGate>
                   ) : (
                     <SetupNeeded />
                   )}

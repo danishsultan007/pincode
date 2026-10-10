@@ -86,6 +86,7 @@ Cloudflare → Workers & Pages → Create → Pages → connect the GitHub repo 
 - No `_redirects` file is needed: with no `404.html`, Pages serves `index.html` for unknown paths. After the first deploy, open `/privacy` and `/delete-account` directly to confirm.
 - Environment variables (Production *and* Preview): `NODE_VERSION=20`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (prod values), `EXPO_PUBLIC_WEB_URL=https://<your-domain>`, `EXPO_PUBLIC_APP_ENV=production`.
 - Attach your custom domain.
+- Set the Pages **production branch** to `production` (Settings → Builds & deployments), not `main`. Release web with `git push origin main:production` after the prod DB step.
 
 `EXPO_PUBLIC_*` values are baked in at build time — change one, redeploy.
 
@@ -177,11 +178,10 @@ Smoke-test the preview APK: sign up, confirm email, Google sign-in, post with ph
 - Collect feedback: Settings → Send feedback (read it in Settings → Admin → Feedback inbox), a WhatsApp group for the testers, a 5-question form on day 7 and 14.
 - Moderate daily: Admin → Moderation queue. You committed to reviewing reports within 24 hours.
 - Ship JS-only fixes without a Play review:
-  ```bash
-  cd mobile
-  eas update --channel production --environment production --message "fix: ..."
+  ```powershell
+  .\scripts\publish-ota.ps1 -Channel production -Message "fix: ..."
   ```
-  Always pass `--environment` — without it EAS bundles with your local `mobile/.env` (the *dev* Supabase project). Native/config changes need a new build + version bump.
+  The script runs the pre-release checks, keeps your local `mobile/.env` (the *dev* Supabase project) out of the bundle, and verifies the result. Native/config changes need a new build + version bump. See `RELEASING.md` for the full flow.
 - Backups: add repo secrets `SUPABASE_DB_URL` (session-pooler URL) and `BACKUP_PASSPHRASE` (GitHub → Settings → Secrets → Actions); `.github/workflows/backup.yml` then dumps and encrypts nightly. **Keep the repo private.** Upgrade Supabase to **Pro** before the production rollout (the free plan has no backups and pauses after 7 idle days).
 
 ## 8. Known follow-ups

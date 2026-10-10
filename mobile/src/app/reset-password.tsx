@@ -1,79 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
-import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
-import { useToast } from '@/providers/ToastProvider';
-import { updatePassword } from '@/lib/auth';
+import { NewPasswordForm } from '@/components/auth/NewPasswordForm';
 import { supabase } from '@/lib/supabase';
 import { messageFor } from '@/lib/errors';
-import { space } from '@/theme/tokens';
+import { colors, space } from '@/theme/tokens';
 
-// Reached after the recovery email's link (via auth/callback), which fires
-// an onAuthStateChange('PASSWORD_RECOVERY') event (MOBILE-PLAN.md §5.3).
+// Landing page for the "Forgot password?" email link (sendPasswordReset
+// redirects here). The link carries a one-time ?code=… that must be exchanged
+// for a session before the password can be changed:
+//   - web: supabase-js does it automatically (detectSessionInUrl), we wait for it
+//   - native: we exchange it ourselves. Always exchange, even if someone is
+//     already signed in on this device, so the reset applies to the account
+//     the email was sent to.
 export default function ResetPassword() {
   const router = useRouter();
-  const toast = useToast();
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { code, error_description } = useLocalSearchParams<{ code?: string; error_description?: string }>();
+  const [status, setStatus] = useState<'checking' | 'ready' | 'failed'>('checking');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    let cancelled = false;
+    const done = (s: 'ready' | 'failed', msg?: string) => {
+      if (cancelled) return;
+      setStatus(s);
+      if (msg) setError(msg);
+    };
 
-  const submit = async () => {
-    setLoading(true);
-    try {
-      await updatePassword(password);
-      toast.show('Password updated.');
-      router.replace('/');
-    } catch (err) {
-      toast.show(messageFor(err));
-    } finally {
-      setLoading(false);
+    async function run() {
+      if (error_description) return done('failed', String(error_description));
+      try {
+        if (Platform.OS !== 'web' && typeof code === 'string' && code) {
+          const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exErr) throw exErr;
+          return done('ready');
+        }
+        // Web (or no code): wait briefly for the session supabase-js sets up from the URL.
+        for (let i = 0; i < 20; i++) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) return done('ready');
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        done('failed', 'This reset link is invalid or has expired.');
+      } catch (err) {
+        done('failed', messageFor(err));
+      }
     }
-  };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [code, error_description]);
 
   return (
     <Screen scroll>
-      <Header large title="Reset password" />
+      <Header large title="Set a new password" />
       <View style={styles.form}>
-        {!ready ? (
-          <Text variant="secondary">Open the reset link from your email to continue.</Text>
+        {status === 'checking' ? (
+          <ActivityIndicator color={colors.accent} />
+        ) : status === 'failed' ? (
+          <>
+            <Text variant="body">{error ?? 'This reset link is invalid or has expired.'}</Text>
+            <Text variant="secondary">Reset links work once and expire after a while. Request a new one.</Text>
+            <Button label="Send a new link" onPress={() => router.replace('/forgot-password')} />
+          </>
         ) : (
           <>
-            <TextField
-              label="New password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              hint="At least 8 characters"
-            />
-            <TextField
-              label="Confirm password"
-              value={confirm}
-              onChangeText={setConfirm}
-              secureTextEntry
-              error={confirm && confirm !== password ? "Passwords don't match" : undefined}
-            />
-            <Button
-              size="lg"
-              label="Update password"
-              onPress={submit}
-              loading={loading}
-              disabled={password.length < 8 || password !== confirm}
-            />
+            <Text variant="secondary">Choose a new password for your account.</Text>
+            <NewPasswordForm submitLabel="Update password" onDone={() => router.replace('/')} />
           </>
         )}
       </View>

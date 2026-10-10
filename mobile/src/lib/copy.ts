@@ -199,6 +199,8 @@ export const copy = {
     safetyNote: 'Safety messages from pincode Team are always on',
     blockedUsers: 'Blocked users',
     guidelines: 'Guidelines',
+    changePassword: 'Change password',
+    setPassword: 'Set a password',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
     feedback: 'Send feedback',

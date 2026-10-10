@@ -110,9 +110,11 @@ export async function signInWithIdentifier(identifier: string, password: string)
   return session;
 }
 
+// The reset link lands on /reset-password (not /auth/callback, which would
+// just sign the user in and go home without asking for a new password).
 export async function sendPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: Linking.createURL('auth/callback'),
+    redirectTo: Linking.createURL('reset-password'),
   });
   if (error) throw error;
 }

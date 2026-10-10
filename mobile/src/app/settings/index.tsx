@@ -20,7 +20,10 @@ import { goBack } from '@/lib/nav';
 export default function Settings() {
   const router = useRouter();
   const toast = useToast();
-  const { me, signOut } = useAuth();
+  const { me, user, signOut } = useAuth();
+  // Google-only accounts have no password until they set one here.
+  const providers = (user?.app_metadata?.providers as string[] | undefined) ?? [];
+  const hasPassword = providers.includes('email');
 
   if (!me) return null;
 
@@ -68,6 +71,12 @@ export default function Settings() {
           subtitle={me.private.phone_e164 ?? 'Not set'}
           chevron
           onPress={() => router.push('/settings/phone')}
+        />
+        <ListRow
+          title={hasPassword ? copy.settings.changePassword : copy.settings.setPassword}
+          subtitle={hasPassword ? undefined : 'Lets you sign in with email too'}
+          chevron
+          onPress={() => router.push('/settings/password')}
         />
         <ListRow
           title="Home area"

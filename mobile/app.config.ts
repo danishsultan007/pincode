@@ -18,7 +18,7 @@ const config: ExpoConfig = {
   slug: 'pincode',
   scheme: 'pincode',
   owner: EAS_OWNER,
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   // 'automatic' follows the phone's light/dark setting (src/theme/tokens.ts reads it).
   userInterfaceStyle: 'automatic',

@@ -9,14 +9,35 @@
   - **Play (en-IN, max 500 chars)**: text for Play Console "What's new". Only needed for native builds uploaded to Play (OTA updates never appear in Play).
   - **Internal**: migrations, Edge Functions, config, risks, rollback notes. Never shared.
 - `scripts\release-check.ps1` warns if there is no heading containing the current `version` from `mobile/app.config.ts`.
-- Keep an `## Unreleased` section at the top for work that has landed but not shipped; rename it to the version when releasing.
+- Keep an `## Unreleased
+
+(nothing yet)
 
 ---
 
-## Unreleased
+## v1.1.0 — 2026-10-11
+
+First Google Play closed-testing build (native build; version 1.1.0).
+
+### Testers
+Welcome to the Play Store beta! New in this build:
+- Push notifications: get a ping for new messages, replies and requests.
+- The map now shows on Android, with posts around you.
+- New app icon.
+- Settings now shows the app version, so you can tell us exactly which build you use.
+- If an old version ever stops working, you will see an "Update required" screen with a button to update from Play.
+- Support contact is now pincode.app.team@gmail.com.
+
+Please keep telling us what breaks: Settings > Send feedback.
+
+### Play (en-IN, max 500 chars)
+First Play Store beta. New: push notifications for messages and replies, the map on Android, a new app icon, and an app version line in Settings. This is a closed test, so things may break and data may be reset. Tell us what you find in Settings > Send feedback.
 
 ### Internal
-- Minimum supported version gate (OTA to 1.0.0): `app_config` table with `min_supported_version` and `message`; the app shows a blocking "Update required" screen below the minimum and fails open if the check cannot run.
+- Native changes (hence 1.1.0): Firebase `google-services.json` + FCM V1 key for push, Google Maps API key for react-native-maps, new icon/splash assets, expo-updates + Sentry plugin config.
+- Backend: `app_config` min-supported-version gate (migration 20260927002000, already on dev and prod), EAS env vars point preview + production at pincode-prod.
+- Support email set to pincode.app.team@gmail.com (legal pages, delete-account page, geocoder contact).
+- Remember: testers on the 1.0.0 preview APK cannot update in place to the Play build (different signing key); they must uninstall and install from the Play closed-testing link.
 
 ---
 

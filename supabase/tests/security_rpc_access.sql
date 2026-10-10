@@ -32,7 +32,8 @@ declare
     '_set_mod_status','_set_solved','_system_conversation','award_badge','award_rep',
     'delete_my_account','filter_terms_validate','handle_new_user','handle_user_email_change',
     'login_throttle_clear','login_throttle_hit','moderate_text','notify','revoke_rep',
-    'send_push','is_blocked_between'];
+    'send_push','is_blocked_between',
+    '_chat_attachment_paths_for_user','_expired_chat_attachments'];
   v_anon text; v_auth text; v_srv text; v_keepmiss text;
 begin
   select string_agg(p.oid::regprocedure::text, E'\n  ' order by p.proname) into v_anon

@@ -48,5 +48,8 @@
     "@types/leaflet": "^1.9.12",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "react-native-worklets": "0.13.0"
   }
 }

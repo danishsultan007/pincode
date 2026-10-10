@@ -155,7 +155,7 @@ Smoke-test the preview APK: sign up, confirm email, Google sign-in, post with ph
      |---|---|---|
      | Approximate + precise location | yes | app functionality |
      | Name, email, phone number, user IDs | yes | app functionality, account management |
-     | Photos | yes | app functionality (post/profile images) |
+     | Photos | yes | app functionality (post/profile images, photos sent in chat; chat photos are private and auto-deleted after 90 days) |
      | Messages, other user-generated content | yes | app functionality |
      | Crash logs, diagnostics | yes (Sentry) | analytics / fix crashes |
      | Device or other IDs (push token) | yes | app functionality (notifications) |

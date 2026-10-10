@@ -99,6 +99,20 @@ export function useMessages(conversationId: string | undefined) {
   return { ...query, loadOlder };
 }
 
+// Signed link for a private chat photo. Links last an hour, so cache for 50
+// minutes; the bubble refetches when an image fails to load. A missing file
+// (expired by the retention job) resolves to an error, shown as "Photo expired".
+export function useAttachmentUrl(path: string | null | undefined) {
+  return useQuery<string>({
+    queryKey: ['chat-attachment', path],
+    queryFn: () => chatApi.signAttachment(path as string),
+    enabled: !!path,
+    staleTime: 50 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function useMarkConversationRead(conversationId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -113,7 +127,8 @@ export function useMarkConversationRead(conversationId: string | undefined) {
 export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => chatApi.sendMessage(conversationId, body),
+    mutationFn: ({ body, attachment }: { body: string; attachment?: chatApi.ChatAttachment | null }) =>
+      chatApi.sendMessage(conversationId, body, attachment),
     onSuccess: (message) => {
       queryClient.setQueryData<Message[]>(['messages', conversationId], (prev) =>
         prev && prev.some((m) => m.id === message.id) ? prev : [message, ...(prev ?? [])]

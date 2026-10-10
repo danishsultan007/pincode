@@ -85,14 +85,65 @@ export async function listMessages(conversationId: string, before?: string | nul
   return (data as Message[] | null) ?? [];
 }
 
-export async function sendMessage(conversationId: string, body: string): Promise<Message> {
+export type ChatAttachment = { path: string; width: number; height: number };
+
+export async function sendMessage(conversationId: string, body: string, attachment?: ChatAttachment | null): Promise<Message> {
   const { data, error } = await supabase
     .from('messages')
-    .insert({ conversation_id: conversationId, body })
+    .insert({
+      conversation_id: conversationId,
+      body,
+      ...(attachment
+        ? { attachment_path: attachment.path, attachment_width: attachment.width, attachment_height: attachment.height }
+        : {}),
+    })
     .select('*')
     .single();
   if (error) throw error;
   return data as Message;
+}
+
+// Chat photos live in the private 'chat-attachments' bucket at
+// <conversation_id>/<sender_uid>/<random>.<ext>. The random part only has to be
+// unique (access is enforced by storage RLS, not by hiding the path), but Hermes
+// has no crypto.randomUUID, so build it from Math.random + time.
+function randomId(): string {
+  let s = Date.now().toString(36);
+  for (let i = 0; i < 3; i++) s += Math.random().toString(36).slice(2, 8);
+  return s.slice(0, 40);
+}
+
+const EXT_BY_MIME: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+export async function uploadChatImage(conversationId: string, uid: string, blob: Blob): Promise<string> {
+  const mime = blob.type in EXT_BY_MIME ? blob.type : 'image/jpeg';
+  const path = `${conversationId}/${uid}/${randomId()}.${EXT_BY_MIME[mime]}`;
+  const { error } = await supabase.storage.from('chat-attachments').upload(path, blob, { contentType: mime, upsert: false });
+  if (error) {
+    // Storage reports a refused upload as an RLS violation; say what it means.
+    if (/row-level security|unauthorized|not allowed/i.test(error.message)) throw new Error('attachments_unavailable');
+    if (/mime/i.test(error.message)) throw new Error('bad_attachment');
+    if (/maximum|too large|payload/i.test(error.message)) throw new Error('attachment_too_large');
+    if (/bucket not found/i.test(error.message)) throw new Error('attachments_unavailable');
+    throw error;
+  }
+  return path;
+}
+
+// Short-lived link for a private photo (the bucket is not public).
+export async function signAttachment(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('chat-attachments').createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) {
+    // A file the retention job (or a moderator removal) deleted is gone for good; anything else may be transient.
+    if (error && /not found|does not exist/i.test(error.message)) throw new Error('photo_expired');
+    throw error ?? new Error('attachments_unavailable');
+  }
+  return data.signedUrl;
+}
+
+// Discards an uploaded photo that was never sent (allowed only while no message uses it).
+export async function deleteUnsentAttachment(path: string): Promise<void> {
+  await supabase.storage.from('chat-attachments').remove([path]);
 }
 
 export async function setMuted(conversationId: string, userId: string, muted: boolean): Promise<void> {

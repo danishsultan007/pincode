@@ -12,3 +12,6 @@ verify_jwt = true
 # Callers are signed-out users (forgot password).
 [functions.request-password-reset]
 verify_jwt = false
+
+[functions.cleanup-chat-attachments]
+verify_jwt = false

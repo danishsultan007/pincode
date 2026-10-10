@@ -185,6 +185,13 @@ export const copy = {
     mute: 'Mute',
     unmute: 'Unmute',
     reportUser: 'Report user',
+    attachPhoto: 'Attach photo',
+    removePhoto: 'Remove photo',
+    photoFrom: (name: string) => `Photo from ${name}`,
+    photoExpired: 'Photo expired',
+    photoUnavailable: "Couldn't load photo",
+    reportMessage: 'Report message',
+    closePhoto: 'Close photo',
   },
 
   profile: {

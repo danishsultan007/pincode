@@ -11,6 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CommentComposer } from '@/components/comments/CommentComposer';
 import { RequestBar } from '@/components/chat/RequestBar';
 import { MessageBubble } from '@/components/chat/MessageBubble';
+import { PhotoViewer } from '@/components/chat/PhotoViewer';
+import { pickChatImage, type PreparedImage } from '@/lib/prepareImage';
+import * as chatApi from '@/api/chat';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import {
@@ -48,6 +51,12 @@ export default function ChatScreen() {
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const isFocusedRef = useRef(false);
+  // A picked photo waits in the composer until sent. uploadedPath remembers a finished
+  // upload so a retry after a failed send does not upload the same photo twice.
+  const [photo, setPhoto] = useState<PreparedImage | null>(null);
+  const [photoSending, setPhotoSending] = useState(false);
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
+  const uploadedPath = useRef<string | null>(null);
 
   const { data: conversation, isLoading: conversationLoading } = useConversation(id);
   const membership = useMyMembership(id);
@@ -142,13 +151,76 @@ export default function ChatScreen() {
     !!me &&
     (me.profile.ban_permanent || (!!me.profile.banned_until && new Date(me.profile.banned_until) > new Date()));
 
-  const handleSend = () => {
+  const handleAttach = async () => {
+    try {
+      const picked = await pickChatImage();
+      if (!picked) return;
+      uploadedPath.current = null;
+      setPhoto(picked);
+    } catch (err) {
+      toast.show(messageFor(err));
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    if (uploadedPath.current) chatApi.deleteUnsentAttachment(uploadedPath.current).catch(() => {});
+    uploadedPath.current = null;
+    setPhoto(null);
+  };
+
+  const handleSend = async () => {
     const text = body.trim();
-    if (!text) return;
-    sendMessage.mutate(text, {
-      onSuccess: () => setBody(''),
-      onError: (err) => toast.show(messageFor(err)),
-    });
+    if (!text && !photo) return;
+    if (!photo) {
+      sendMessage.mutate(
+        { body: text },
+        {
+          onSuccess: () => setBody(''),
+          onError: (err) => toast.show(messageFor(err)),
+        }
+      );
+      return;
+    }
+    if (photoSending || !id || !user) return;
+    setPhotoSending(true);
+    try {
+      if (!uploadedPath.current) uploadedPath.current = await chatApi.uploadChatImage(id, user.id, photo.blob);
+      await sendMessage.mutateAsync({
+        body: text,
+        attachment: { path: uploadedPath.current, width: photo.width, height: photo.height },
+      });
+      setBody('');
+      setPhoto(null);
+      uploadedPath.current = null;
+    } catch (err) {
+      const e = err as { code?: string; message?: string };
+      if (e?.code === '23505') {
+        // The send went through but its response was lost: the photo is already in the chat.
+        queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        setBody('');
+        setPhoto(null);
+        uploadedPath.current = null;
+      } else {
+        // The saved upload is gone (the 24 h orphan clean-up removed it): upload afresh next time.
+        if (e?.message?.includes('bad_attachment')) uploadedPath.current = null;
+        toast.show(messageFor(err));
+      }
+    } finally {
+      setPhotoSending(false);
+    }
+  };
+
+  const reportMessage = (m: Message) => {
+    actionSheet(copy.chat.reportMessage, [
+      {
+        label: copy.chat.reportMessage,
+        onPress: () =>
+          router.push({
+            pathname: '/report',
+            params: { targetType: 'message', targetId: m.id, userId: m.sender_id ?? '', conversationId: id },
+          }),
+      },
+    ]);
   };
 
   const handleRespond = async (action: 'accept' | 'decline' | 'block') => {
@@ -212,7 +284,18 @@ export default function ChatScreen() {
         data={messages ?? []}
         inverted
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} mine={item.sender_id === user?.id} />}
+        renderItem={({ item }) => {
+          const mine = item.sender_id === user?.id;
+          return (
+            <MessageBubble
+              message={item}
+              mine={mine}
+              senderName={otherProfile?.display_name}
+              onOpenPhoto={setViewerUri}
+              onLongPress={mine || item.is_system ? undefined : reportMessage}
+            />
+          );
+        }}
         contentContainerStyle={styles.list}
         onEndReachedThreshold={0.4}
         onEndReached={() => loadOlder()}
@@ -246,13 +329,17 @@ export default function ChatScreen() {
             onChangeText={setBody}
             onSubmit={handleSend}
             placeholder={alreadySentPendingRequest ? copy.chat.waitingForAccept : copy.chat.messagePlaceholder}
-            disabled={alreadySentPendingRequest}
+            disabled={alreadySentPendingRequest || photoSending}
+            onAttach={conversation.status === 'accepted' ? handleAttach : undefined}
+            attachment={photo ? { previewUri: photo.previewUri, sending: photoSending } : null}
+            onRemoveAttachment={handleRemovePhoto}
           />
         </>
       )}
       </BottomSafeArea>
       )}
       </KeyboardAvoidingView>
+      <PhotoViewer uri={viewerUri} onClose={() => setViewerUri(null)} />
     </Screen>
   );
 }

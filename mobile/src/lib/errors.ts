@@ -32,6 +32,11 @@ export type ErrorKey =
   | 'request_pending'
   | 'request_pending_accept_first'
   | 'request_declined'
+  | 'attachments_need_accept'
+  | 'attachments_unavailable'
+  | 'bad_attachment'
+  | 'attachment_too_large'
+  | 'photo_too_large'
   | 'content_blocked'
   | 'not_a_member'
   | 'community_unavailable'
@@ -76,6 +81,11 @@ const MESSAGES: Record<ErrorKey, string> = {
   request_pending: 'A message request is already pending.',
   request_pending_accept_first: 'They need to accept your request before you can send more messages.',
   request_declined: 'This message request was declined.',
+  attachments_need_accept: 'Photos can be sent once they accept your request.',
+  attachments_unavailable: "Photos can't be sent in this chat right now. Try again later.",
+  bad_attachment: "That photo couldn't be sent. Try another one.",
+  attachment_too_large: 'That photo is too large. Try a smaller one.',
+  photo_too_large: 'That photo is too large (over 1.5 MB). Try a smaller one or crop it.',
   content_blocked: "This contains language that isn't allowed on pincode.",
   not_a_member: "You're not a member of this community.",
   community_unavailable: "This community isn't available.",

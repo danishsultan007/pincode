@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { TextField } from '@/components/ui/TextField';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
@@ -15,6 +15,10 @@ export type CommentComposerProps = {
   replyingTo?: { id: string; username: string } | null;
   onCancelReply?: () => void;
   disabled?: boolean;
+  // Chat only: a photo button left of the field, and a preview of the picked photo.
+  onAttach?: () => void;
+  attachment?: { previewUri: string; sending: boolean } | null;
+  onRemoveAttachment?: () => void;
 };
 
 // Sticky bottom composer for the post detail and thread screens
@@ -28,9 +32,27 @@ export function CommentComposer({
   replyingTo,
   onCancelReply,
   disabled,
+  onAttach,
+  attachment,
+  onRemoveAttachment,
 }: CommentComposerProps) {
   return (
     <View style={styles.wrap}>
+      {attachment ? (
+        <View style={styles.previewRow}>
+          <View style={styles.previewBox}>
+            <Image source={{ uri: attachment.previewUri }} style={styles.previewImg} accessibilityIgnoresInvertColors />
+            {attachment.sending ? (
+              <View style={styles.previewBusy}>
+                <ActivityIndicator color={colors.accentInk} />
+              </View>
+            ) : null}
+          </View>
+          {attachment.sending ? null : (
+            <IconButton name="x" label={copy.chat.removePhoto} size={14} onPress={onRemoveAttachment} hitSlop={10} />
+          )}
+        </View>
+      ) : null}
       {replyingTo ? (
         <View style={styles.replyChip}>
           <Text variant="meta" style={{ color: colors.accent }}>
@@ -40,6 +62,14 @@ export function CommentComposer({
         </View>
       ) : null}
       <View style={styles.row}>
+        {onAttach ? (
+          <IconButton
+            name="camera"
+            label={copy.chat.attachPhoto}
+            onPress={onAttach}
+            disabled={disabled || !!attachment}
+          />
+        ) : null}
         <View style={{ flex: 1 }}>
           <TextField
             value={value}
@@ -93,6 +123,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.accentSoft,
   },
+  previewRow: { flexDirection: 'row', alignItems: 'center', gap: space.s2 },
+  previewBox: { width: 64, height: 64, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface2 },
+  previewImg: { width: '100%', height: '100%' },
+  previewBusy: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.s2 },
   sendHit: { width: 44, height: 44 },
   send: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },

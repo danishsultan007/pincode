@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
+import { useAttachmentUrl } from '@/hooks/useInbox';
 import { fmtTime } from '@/lib/format';
 import { copy } from '@/lib/copy';
 import { colors, radius, space } from '@/theme/tokens';
@@ -9,15 +10,98 @@ import type { Message } from '@/types/models';
 export type MessageBubbleProps = {
   message: Message;
   mine: boolean;
+  senderName?: string;
+  onOpenPhoto?: (uri: string) => void;
+  onLongPress?: (message: Message) => void;
 };
+
+const PHOTO_W = 220;
+
+// A private chat photo: signed link fetched on demand, sized from the stored
+// width/height so the list does not jump when it loads. A file removed by the
+// retention job (or a moderator) shows as "Photo expired".
+function AttachmentImage({
+  message,
+  mine,
+  senderName,
+  onOpen,
+  onLongPress,
+}: {
+  message: Message;
+  mine: boolean;
+  senderName?: string;
+  onOpen?: (uri: string) => void;
+  onLongPress?: () => void;
+}) {
+  const { data: uri, isError, error, refetch } = useAttachmentUrl(message.attachment_path);
+  const expired = isError && (error as Error | null)?.message === 'photo_expired';
+  const [failed, setFailed] = React.useState(false);
+  const retried = React.useRef(false);
+  const ratio = Math.min(1.8, Math.max(0.6, (message.attachment_width ?? 4) / (message.attachment_height ?? 3)));
+  const label = copy.chat.photoFrom(mine ? 'you' : senderName || 'them') + (message.body ? `: ${message.body}` : '');
+
+  if (isError || failed) {
+    return (
+      <Pressable
+        // Only an expired file is permanent; anything else (offline, a hiccup) can be retried by tapping.
+        onPress={
+          expired
+            ? undefined
+            : () => {
+                retried.current = false;
+                setFailed(false);
+                refetch();
+              }
+        }
+        onLongPress={onLongPress}
+        style={[styles.photoBox, styles.photoGone, { aspectRatio: ratio }]}
+      >
+        <Text variant="bodySm" style={mine ? styles.timeMine : styles.time}>
+          {expired ? copy.chat.photoExpired : copy.chat.photoUnavailable}
+        </Text>
+      </Pressable>
+    );
+  }
+  return (
+    <Pressable
+      onPress={() => uri && onOpen?.(uri)}
+      onLongPress={onLongPress}
+      delayLongPress={350}
+      disabled={!uri}
+      accessibilityRole="imagebutton"
+      accessibilityLabel={label}
+      style={[styles.photoBox, { aspectRatio: ratio }]}
+    >
+      {uri ? (
+        <Image
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+          onError={() => {
+            // The signed link may have expired while the screen stayed open: fetch a fresh one once.
+            if (!retried.current) {
+              retried.current = true;
+              refetch();
+            } else {
+              setFailed(true);
+            }
+          }}
+        />
+      ) : null}
+    </Pressable>
+  );
+}
 
 // Chat message bubble (MOBILE-PLAN.md §4 Chat): mine right in accent,
 // theirs left in surface. A system message (is_system, sender_id null, from
 // the "pincode Team" conversation) renders full-width, centered, no bubble
 // side. A held message (mod_status !== 'visible') still renders for its own
 // sender (RLS allows that) but shows the held placeholder instead of the body.
-export function MessageBubble({ message, mine }: MessageBubbleProps) {
+export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPress }: MessageBubbleProps) {
   const held = message.mod_status !== 'visible';
+  const hasPhoto = !!message.attachment_path && !held;
+  const showText = held || message.body.length > 0;
 
   if (message.is_system) {
     return (
@@ -36,22 +120,38 @@ export function MessageBubble({ message, mine }: MessageBubbleProps) {
 
   return (
     <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
-      <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-        <Text
-          variant="body"
-          style={[mine ? styles.textMine : null, held ? (mine ? styles.heldMine : styles.heldText) : null]}
-        >
-          {held ? copy.chat.heldForReview : message.body}
-        </Text>
+      <Pressable
+        onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+        delayLongPress={350}
+        style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs, hasPhoto ? styles.bubbleWithPhoto : null]}
+      >
+        {hasPhoto ? <AttachmentImage
+            message={message}
+            mine={mine}
+            senderName={senderName}
+            onOpen={onOpenPhoto}
+            onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+          /> : null}
+        {showText ? (
+          <Text
+            variant="body"
+            style={[mine ? styles.textMine : null, held ? (mine ? styles.heldMine : styles.heldText) : null]}
+          >
+            {held ? copy.chat.heldForReview : message.body}
+          </Text>
+        ) : null}
         <Text variant="meta" style={mine ? styles.timeMine : styles.time}>
           {fmtTime(message.created_at)}
         </Text>
-      </View>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  bubbleWithPhoto: { paddingHorizontal: 6, paddingTop: 6 },
+  photoBox: { width: PHOTO_W, maxWidth: '100%', borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface2 },
+  photoGone: { alignItems: 'center', justifyContent: 'center', padding: space.s3 },
   row: { flexDirection: 'row', paddingHorizontal: space.s3, paddingVertical: 2 },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },

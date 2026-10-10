@@ -358,6 +358,10 @@ export type Message = {
   is_system: boolean;
   mod_status: ModStatus;
   created_at: ISODateString;
+  attachment_path?: string | null;
+  attachment_mime?: string | null;
+  attachment_width?: number | null;
+  attachment_height?: number | null;
 };
 
 // ---------------------------------------------------------------------------

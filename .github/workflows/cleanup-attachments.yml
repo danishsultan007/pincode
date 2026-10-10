@@ -1,0 +1,24 @@
+# Daily retention clean-up of chat photos (90 days, plus never-sent uploads).
+# Calls the cleanup-chat-attachments Edge Function. Needs two repository secrets:
+#   CLEANUP_URL     https://<prod-ref>.supabase.co/functions/v1/cleanup-chat-attachments
+#   CLEANUP_SECRET  the same value as `supabase secrets set CLEANUP_SECRET=...` on prod
+name: Chat attachment clean-up
+
+permissions: {}
+
+on:
+  schedule:
+    - cron: '30 21 * * *'   # 21:30 UTC = 03:00 IST
+  workflow_dispatch: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call clean-up function
+        env:
+          CLEANUP_URL: ${{ secrets.CLEANUP_URL }}
+          CLEANUP_SECRET: ${{ secrets.CLEANUP_SECRET }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sS -X POST "$CLEANUP_URL" -H "x-cleanup-secret: $CLEANUP_SECRET"

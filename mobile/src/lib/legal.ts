@@ -76,7 +76,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: 'What we collect',
-    body: 'Account: email address, phone number, username, display name, bio, interests and profile photo. Location: the home area you choose, and your precise device location only while you use the app and allow it (to show nearby posts and the map). Content: your posts, comments, reactions, photos you upload, and messages. Technical: a push notification token, app version, device type and crash reports. We do not collect your contacts, and we do not use the microphone or camera.',
+    body: 'Account: email address, phone number, username, display name, bio, interests and profile photo. Location: the home area you choose, and your precise device location only while you use the app and allow it (to show nearby posts and the map). Content: your posts, comments, reactions, photos you upload (including photos you send in messages), and messages. Technical: a push notification token, app version, device type and crash reports. We do not collect your contacts, and we do not use the microphone or camera.',
   },
   {
     title: 'Why we use it',
@@ -88,7 +88,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: 'Who sees what',
-    body: 'Your username, display name, bio, interests, profile photo, home area and posts are visible to other users. Your email and phone number are private and are not shown to other users. Messages are visible only to the people in the conversation, and to our moderators if a message is reported.',
+    body: 'Your username, display name, bio, interests, profile photo, home area and posts are visible to other users. Your email and phone number are private and are not shown to other users. Messages, including photos sent in messages, are visible only to the people in the conversation, and to our moderators if a message is reported.',
   },
   {
     title: 'Service providers',
@@ -96,7 +96,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: 'How long we keep it',
-    body: 'We keep your data while your account exists. When you delete your account we remove your profile, posts, comments, messages and uploaded photos. Backups are overwritten within about 30 days, and we may keep limited records where the law requires.',
+    body: 'We keep your data while your account exists. Photos sent in messages are deleted automatically after 90 days, or sooner if a moderator removes the message; the message text stays. When you delete your account we remove your profile, posts, comments, messages and uploaded photos. Backups are overwritten within about 30 days, and we may keep limited records where the law requires.',
   },
   {
     title: 'Your rights',

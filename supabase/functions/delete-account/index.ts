@@ -40,6 +40,21 @@ Deno.serve(async (req) => {
   try {
     for (const bucket of BUCKETS) await emptyUserFolder(bucket, uid);
 
+    // Chat photos live at chat-attachments/<conversation>/<sender>/<file>, not under
+    // the user's folder, and the user's direct conversations (with the other
+    // person's photos in them) cascade away with the account. Remove every file the
+    // user owns or that sits in one of their conversations.
+    // The API returns at most ~1000 rows per call, so list, remove, and list again
+    // until nothing is left (removed files drop out of the next listing).
+    for (let round = 0; round < 100; round++) {
+      const { data: chatPaths, error: pathsErr } = await admin.rpc('_chat_attachment_paths_for_user', { p_uid: uid });
+      if (pathsErr) throw pathsErr;
+      const paths = (chatPaths ?? []) as string[];
+      if (paths.length === 0) break;
+      const { error: rmErr } = await admin.storage.from('chat-attachments').remove(paths);
+      if (rmErr) throw rmErr;
+    }
+
     // messages.sender_id is ON DELETE SET NULL, which would leave the user's
     // message text readable by the other person. Remove their messages
     // (system messages already have a null sender, so they are untouched).

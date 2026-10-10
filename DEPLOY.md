@@ -81,10 +81,10 @@ Google Cloud → APIs & Services → Credentials → OAuth client ID (type **Web
 Cloudflare → Workers & Pages → Create → Pages → connect the GitHub repo `danishsultan007/pincode`:
 
 - Root directory: `mobile`
-- Build command: `npm ci && npm run export:web`
+- Build command: `npm install --no-audit --no-fund && npm run export:web` (not `npm ci`: the lockfile is written by npm 11 locally and Cloudflare's npm 10 reports an optional `react-native-worklets` peer as missing, so `npm ci` fails; `npm install` honors the lock and fills it in)
 - Output directory: `dist`
 - No `_redirects` file is needed: with no `404.html`, Pages serves `index.html` for unknown paths. After the first deploy, open `/privacy` and `/delete-account` directly to confirm.
-- Environment variables (Production *and* Preview): `NODE_VERSION=20`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (prod values), `EXPO_PUBLIC_WEB_URL=https://<your-domain>`, `EXPO_PUBLIC_APP_ENV=production`.
+- Environment variables (Production *and* Preview): `NODE_VERSION=22` (the Supabase client requires Node 22+), `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (prod values), `EXPO_PUBLIC_WEB_URL=https://<your-domain>`, `EXPO_PUBLIC_APP_ENV=production`.
 - Attach your custom domain.
 - Set the Pages **production branch** to `production` (Settings → Builds & deployments), not `main`. Release web with `git push origin main:production` after the prod DB step.
 

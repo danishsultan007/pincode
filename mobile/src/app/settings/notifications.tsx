@@ -22,7 +22,15 @@ const ROWS: { key: keyof NotificationPrefs; label: string }[] = [
   { key: 'communities', label: 'Community activity' },
 ];
 
+// The switches copy your saved preferences when the form first appears, so it must wait for the
+// profile to load (on a cold-start deep link it is not loaded yet, which left this page blank).
 export default function NotificationSettings() {
+  const { me } = useAuth();
+  if (!me) return null;
+  return <NotificationSettingsForm />;
+}
+
+function NotificationSettingsForm() {
   const toast = useToast();
   const { me, user, refreshMe } = useAuth();
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(me?.private.notification_prefs ?? null);

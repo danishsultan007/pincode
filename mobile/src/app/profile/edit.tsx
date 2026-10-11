@@ -26,7 +26,16 @@ import { goBack } from '@/lib/nav';
 
 const MAX_INTERESTS = 15;
 
+// The form copies your current profile into its fields when it first appears, so it must not
+// appear before the profile has loaded (a cold-start deep link opens this screen first):
+// empty fields saved would blank your name and bio.
 export default function EditProfile() {
+  const { me } = useAuth();
+  if (!me) return null;
+  return <EditProfileForm />;
+}
+
+function EditProfileForm() {
   const router = useRouter();
   const toast = useToast();
   const { me, refreshMe } = useAuth();

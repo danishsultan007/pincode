@@ -47,6 +47,9 @@ export function confirmAsync(title: string, message?: string, options: ConfirmOp
     return Promise.resolve(typeof window !== 'undefined' ? window.confirm(text) : false);
   }
 
+  // Android: the themed card from ActionSheetProvider (same look as web).
+  if (Platform.OS === 'android' && webConfirmHost) return webConfirmHost(title, message, { confirmLabel, cancelLabel, destructive });
+
   return new Promise((resolve) => {
     Alert.alert(
       title,

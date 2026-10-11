@@ -53,6 +53,32 @@ function getMenuPos(anchor: DOMRect | null, menuH: number | null): { left: numbe
   return { left, top: EDGE, maxHeight: vh - 2 * EDGE };
 }
 
+// The one confirmation dialog used by every confirmAsync() on web and Android.
+function ConfirmCard({
+  title,
+  message,
+  options,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  message?: string;
+  options: Required<ConfirmOptions>;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <View style={styles.confirmCard} accessibilityViewIsModal>
+      <Text variant="headline">{title}</Text>
+      {message ? <Text variant="secondary">{message}</Text> : null}
+      <View style={styles.confirmActions}>
+        <Button label={options.cancelLabel} variant="ghost" onPress={onCancel} />
+        <Button label={options.confirmLabel} variant={options.destructive ? 'danger' : 'primary'} onPress={onConfirm} />
+      </View>
+    </View>
+  );
+}
+
 // Android dropdown position: opens under the touch point (flush right when the
 // tap was in the right half, like a kebab menu), flips above if it would run
 // off the bottom, and is centred when there was no recent touch.
@@ -82,12 +108,20 @@ function androidMenuPos(
 // whatever element the user last pressed (captured via capture-phase
 // pointerdown/keydown listeners on `document`, since call sites never pass a
 // trigger element), or centred if there's no usable anchor. confirmAsync()
-// renders as a centred dialog. iOS uses ActionSheetIOS; Android
-// renders actionSheet() as a bottom sheet in a Modal (Alert.alert caps at 3
-// buttons); confirmAsync() stays on Alert.alert on native.
+// renders as a centred dialog. iOS uses ActionSheetIOS and Alert; Android
+// renders actionSheet() as a dropdown and confirmAsync() as the same themed
+// card as web, both in a Modal (Alert.alert caps at 3 buttons and looks foreign).
 export function ActionSheetProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<SheetState>(null);
+  // The answer function of the confirm currently on screen. Opening anything else first
+  // settles it with "no", so a caller can never be left waiting on a promise that nothing resolves.
+  const pendingConfirm = useRef<((v: boolean) => void) | null>(null);
+  const open = (next: Exclude<SheetState, null>) => {
+    pendingConfirm.current?.(false);
+    pendingConfirm.current = next.kind === 'confirm' ? next.resolve : null;
+    setState(next);
+  };
   const [menuH, setMenuH] = useState<number | null>(null);
   const menuRef = useRef<any>(null);
   const lastPress = useRef<{ rect: DOMRect; at: number } | null>(null);
@@ -108,9 +142,19 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
       setTouchPt(t && Date.now() - t.at < 3000 ? { x: t.x, y: t.y } : null);
       openId.current += 1;
       setMenuH(null);
-      setState({ kind: 'actions', title, options, cancelLabel, anchor: null });
+      open({ kind: 'actions', title, options, cancelLabel, anchor: null });
     });
-    return () => registerWebActionSheetHost(null);
+    // Confirmations get the same themed card as web instead of the grey system Alert.
+    registerWebConfirmHost(
+      (title, message, options) =>
+        new Promise<boolean>((resolve) => open({ kind: 'confirm', title, message, options, resolve }))
+    );
+    return () => {
+      pendingConfirm.current?.(false);
+      pendingConfirm.current = null;
+      registerWebActionSheetHost(null);
+      registerWebConfirmHost(null);
+    };
   }, []);
 
   useEffect(() => {
@@ -141,11 +185,11 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
         anchor = offscreen ? null : r;
       }
       setMenuH(null);
-      setState({ kind: 'actions', title, options, cancelLabel, anchor });
+      open({ kind: 'actions', title, options, cancelLabel, anchor });
     });
     registerWebConfirmHost(
       (title, message, options) =>
-        new Promise<boolean>((resolve) => setState({ kind: 'confirm', title, message, options, resolve }))
+        new Promise<boolean>((resolve) => open({ kind: 'confirm', title, message, options, resolve }))
     );
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
@@ -299,24 +343,45 @@ export function ActionSheetProvider({ children }: { children: React.ReactNode })
           </View>
         </View>
       ) : null}
-      {state?.kind === 'confirm' ? (
-        <View style={styles.confirmHost} pointerEvents="box-none">
-          <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
-          <View style={styles.confirmCard}>
-            <Text variant="headline">{state.title}</Text>
-            {state.message ? <Text variant="secondary">{state.message}</Text> : null}
-            <View style={styles.confirmActions}>
-              <Button label={state.options.cancelLabel} variant="ghost" onPress={dismiss} />
-              <Button
-                label={state.options.confirmLabel}
-                variant={state.options.destructive ? 'danger' : 'primary'}
-                onPress={() => {
+      {Platform.OS === 'android' ? (
+        <Modal
+          visible={state?.kind === 'confirm'}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={dismiss}
+        >
+          <View style={[styles.confirmHost, { paddingTop: insets.top + space.s4, paddingBottom: insets.bottom + space.s4 }]}>
+            <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
+            {state?.kind === 'confirm' ? (
+              <ConfirmCard
+                title={state.title}
+                message={state.message}
+                options={state.options}
+                onCancel={dismiss}
+                onConfirm={() => {
                   state.resolve(true);
                   setState(null);
                 }}
               />
-            </View>
+            ) : null}
           </View>
+        </Modal>
+      ) : null}
+      {Platform.OS !== 'android' && state?.kind === 'confirm' ? (
+        <View style={styles.confirmHost} pointerEvents="box-none">
+          <Pressable style={styles.backdrop} onPress={dismiss} accessibilityLabel="Dismiss" />
+          <ConfirmCard
+            title={state.title}
+            message={state.message}
+            options={state.options}
+            onCancel={dismiss}
+            onConfirm={() => {
+              state.resolve(true);
+              setState(null);
+            }}
+          />
         </View>
       ) : null}
     </>
@@ -362,7 +427,7 @@ const styles = StyleSheet.create({
     gap: space.s2,
     borderWidth: 1,
     borderColor: colors.line,
-    boxShadow: shadow.popover,
+    ...(Platform.OS === 'web' ? { boxShadow: shadow.popover } : { elevation: 12 }),
   } as any,
   confirmActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.s2, marginTop: space.s4 },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.backdrop },

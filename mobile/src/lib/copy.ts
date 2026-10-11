@@ -191,6 +191,12 @@ export const copy = {
     photoExpired: 'Photo expired',
     photoUnavailable: "Couldn't load photo",
     reportMessage: 'Report message',
+    messageOptions: 'Message',
+    deleteForMe: 'Delete for me',
+    deleteForEveryone: 'Delete for everyone',
+    messageDeleted: 'This message was deleted',
+    deletedForEveryoneToast: 'Message deleted for everyone.',
+    deletedForMeToast: 'Message deleted for you.',
     closePhoto: 'Close photo',
   },
 

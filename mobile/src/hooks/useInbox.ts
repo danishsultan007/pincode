@@ -99,16 +99,15 @@ export function useMessages(conversationId: string | undefined) {
   return { ...query, loadOlder };
 }
 
-// Signed link for a private chat photo. Links last an hour, so cache for 50
-// minutes; the bubble refetches when an image fails to load. A missing file
+// Signed link for a private chat photo. Links last 10 minutes, so cache for 8; the bubble refetches when an image fails to load. A missing file
 // (expired by the retention job) resolves to an error, shown as "Photo expired".
 export function useAttachmentUrl(path: string | null | undefined) {
   return useQuery<string>({
     queryKey: ['chat-attachment', path],
     queryFn: () => chatApi.signAttachment(path as string),
     enabled: !!path,
-    staleTime: 50 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 8 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: false,
   });
 }
@@ -134,6 +133,28 @@ export function useSendMessage(conversationId: string) {
         prev && prev.some((m) => m.id === message.id) ? prev : [message, ...(prev ?? [])]
       );
       queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+// Delete a chat message: 'me' hides it for the caller only, 'everyone' turns it into a
+// "This message was deleted" tombstone for both people (sender, within 24 hours).
+export function useDeleteMessage(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, scope }: { messageId: string; scope: 'me' | 'everyone' }) =>
+      scope === 'me' ? chatApi.hideMessage(messageId) : chatApi.deleteMessageForEveryone(messageId),
+    onSuccess: (_data, { messageId, scope }) => {
+      queryClient.setQueryData<Message[]>(['messages', conversationId], (prev) =>
+        scope === 'me'
+          ? (prev ?? []).filter((m) => m.id !== messageId)
+          : (prev ?? []).map((m) =>
+              m.id === messageId
+                ? { ...m, deleted_at: new Date().toISOString(), body: '', attachment_path: null }
+                : m
+            )
+      );
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });

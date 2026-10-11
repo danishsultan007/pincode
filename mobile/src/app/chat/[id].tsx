@@ -24,6 +24,7 @@ import {
   useMessages,
   useMyMembership,
   useRespondToRequest,
+  useDeleteMessage,
   useSendMessage,
   useSetMuted,
 } from '@/hooks/useInbox';
@@ -70,6 +71,7 @@ export default function ChatScreen() {
   const { data: messages, loadOlder } = useMessages(id);
 
   const sendMessage = useSendMessage(id ?? '');
+  const deleteMessage = useDeleteMessage(id ?? '');
   const respond = useRespondToRequest(id ?? '');
   const markRead = useMarkConversationRead(id);
   const setMuted = useSetMuted(id ?? '');
@@ -91,6 +93,16 @@ export default function ChatScreen() {
             prev && prev.some((m) => m.id === message.id) ? prev : [message, ...(prev ?? [])]
           );
           if (isFocusedRef.current) markRead.mutate();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${id}` },
+        (payload) => {
+          const message = payload.new as Message;
+          queryClient.setQueryData<Message[]>(['messages', id], (prev) =>
+            (prev ?? []).map((m) => (m.id === message.id ? { ...m, ...message } : m))
+          );
         }
       )
       .subscribe((status) => {
@@ -224,17 +236,51 @@ export default function ChatScreen() {
     }
   };
 
-  const reportMessage = (m: Message) => {
-    actionSheet(copy.chat.reportMessage, [
-      {
+  const DELETE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+  // Long-press a message: delete for me (anyone), delete for everyone (sender only, and only
+  // within 24 hours of sending), or report (other people's messages).
+  const messageMenu = (m: Message) => {
+    const mine = m.sender_id === user?.id;
+    const options: { label: string; destructive?: boolean; onPress: () => void }[] = [];
+    if (!mine && !m.deleted_at) {
+      options.push({
         label: copy.chat.reportMessage,
         onPress: () =>
           router.push({
             pathname: '/report',
             params: { targetType: 'message', targetId: m.id, userId: m.sender_id ?? '', conversationId: id },
           }),
-      },
-    ]);
+      });
+    }
+    options.push({
+      label: copy.chat.deleteForMe,
+      destructive: true,
+      onPress: () =>
+        deleteMessage.mutate(
+          { messageId: m.id, scope: 'me' },
+          { onSuccess: () => toast.show(copy.chat.deletedForMeToast), onError: (err) => toast.show(messageFor(err)) }
+        ),
+    });
+    const withinWindow = Date.now() - new Date(m.created_at).getTime() < DELETE_WINDOW_MS;
+    if (mine && !m.deleted_at && withinWindow) {
+      options.push({
+        label: copy.chat.deleteForEveryone,
+        destructive: true,
+        onPress: async () => {
+          const ok = await confirmAsync(copy.chat.deleteForEveryone, 'This removes the message for everyone in the chat. This can’t be undone.', {
+            destructive: true,
+            confirmLabel: copy.chat.deleteForEveryone,
+          });
+          if (!ok) return;
+          deleteMessage.mutate(
+            { messageId: m.id, scope: 'everyone' },
+            { onSuccess: () => toast.show(copy.chat.deletedForEveryoneToast), onError: (err) => toast.show(messageFor(err)) }
+          );
+        },
+      });
+    }
+    actionSheet(copy.chat.messageOptions, options);
   };
 
   const handleRespond = async (action: 'accept' | 'decline' | 'block') => {
@@ -306,7 +352,7 @@ export default function ChatScreen() {
               mine={mine}
               senderName={otherProfile?.display_name}
               onOpenPhoto={setViewerUri}
-              onLongPress={mine || item.is_system ? undefined : reportMessage}
+              onLongPress={item.is_system ? undefined : messageMenu}
             />
           );
         }}

@@ -67,7 +67,6 @@ function AttachmentImage({
       onPress={() => uri && onOpen?.(uri)}
       onLongPress={onLongPress}
       delayLongPress={350}
-      disabled={!uri}
       accessibilityRole="imagebutton"
       accessibilityLabel={label}
       style={[styles.photoBox, { aspectRatio: ratio }]}
@@ -99,9 +98,10 @@ function AttachmentImage({
 // side. A held message (mod_status !== 'visible') still renders for its own
 // sender (RLS allows that) but shows the held placeholder instead of the body.
 export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPress }: MessageBubbleProps) {
-  const held = message.mod_status !== 'visible';
-  const hasPhoto = !!message.attachment_path && !held;
-  const showText = held || message.body.length > 0;
+  const deleted = !!message.deleted_at;
+  const held = message.mod_status !== 'visible' && !deleted;
+  const hasPhoto = !!message.attachment_path && !held && !deleted;
+  const showText = held || deleted || message.body.length > 0;
 
   if (message.is_system) {
     return (
@@ -135,9 +135,12 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
         {showText ? (
           <Text
             variant="body"
-            style={[mine ? styles.textMine : null, held ? (mine ? styles.heldMine : styles.heldText) : null]}
+            style={[
+              mine ? styles.textMine : null,
+              held || deleted ? (mine ? styles.heldMine : styles.heldText) : null,
+            ]}
           >
-            {held ? copy.chat.heldForReview : message.body}
+            {deleted ? copy.chat.messageDeleted : held ? copy.chat.heldForReview : message.body}
           </Text>
         ) : null}
         <Text variant="meta" style={mine ? styles.timeMine : styles.time}>

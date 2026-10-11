@@ -32,6 +32,8 @@ export type ErrorKey =
   | 'request_pending'
   | 'request_pending_accept_first'
   | 'request_declined'
+  | 'delete_window_passed'
+  | 'under_review'
   | 'attachments_need_accept'
   | 'attachments_unavailable'
   | 'bad_attachment'
@@ -81,6 +83,8 @@ const MESSAGES: Record<ErrorKey, string> = {
   request_pending: 'A message request is already pending.',
   request_pending_accept_first: 'They need to accept your request before you can send more messages.',
   request_declined: 'This message request was declined.',
+  under_review: "This message can't be deleted for everyone while it is under review.",
+  delete_window_passed: 'You can only delete a message for everyone within 24 hours of sending it.',
   attachments_need_accept: 'Photos can be sent once they accept your request.',
   attachments_unavailable: "Photos can't be sent in this chat right now. Try again later.",
   bad_attachment: "That photo couldn't be sent. Try another one.",

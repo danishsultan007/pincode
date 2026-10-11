@@ -362,6 +362,7 @@ export type Message = {
   attachment_mime?: string | null;
   attachment_width?: number | null;
   attachment_height?: number | null;
+  deleted_at?: ISODateString | null;
 };
 
 // ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 // here — see hooks/useProfile.ts for the query/mutation wrappers.
 
 import { supabase } from '@/lib/supabase';
+import { readImage } from '@/lib/readImage';
 import type { NotificationPrefs, Profile, PublicProfileBundle } from '@/types/models';
 
 export async function getProfileByUsername(username: string): Promise<PublicProfileBundle | null> {
@@ -120,13 +121,9 @@ export async function updateMyProfile(uid: string, input: ProfileEditInput): Pro
 
 // Avatar path convention per MOBILE-PLAN.md §2.10: avatars/<uid>/avatar-<ts>.<ext>
 export async function uploadAvatar(uid: string, uri: string): Promise<string> {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
-  const path = `${uid}/avatar-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from('avatars')
-    .upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+  const { bytes, mime, ext } = await readImage(uri);
+  const path = `${uid}/avatar-${Date.now()}.${ext === 'gif' ? 'jpg' : ext}`;
+  const { error } = await supabase.storage.from('avatars').upload(path, bytes, { contentType: ext === 'gif' ? 'image/jpeg' : mime, upsert: true });
   if (error) throw error;
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   return data.publicUrl;

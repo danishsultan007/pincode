@@ -80,7 +80,7 @@ export default function AdminItem() {
       : content?.kind === 'comment'
         ? content.comment.body
         : content?.kind === 'message'
-          ? content.message.body
+          ? content.message.body || (item.excerpt ?? '')
           : (item.excerpt ?? '');
 
   return (

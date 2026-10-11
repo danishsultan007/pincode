@@ -135,7 +135,7 @@ export async function uploadChatImage(conversationId: string, uid: string, bytes
 
 // Short-lived link for a private photo (the bucket is not public).
 export async function signAttachment(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from('chat-attachments').createSignedUrl(path, 3600);
+  const { data, error } = await supabase.storage.from('chat-attachments').createSignedUrl(path, 600);
   if (error || !data?.signedUrl) {
     // A file the retention job (or a moderator removal) deleted is gone for good; anything else may be transient.
     if (error && /not found|does not exist/i.test(error.message)) throw new Error('photo_expired');
@@ -147,6 +147,18 @@ export async function signAttachment(path: string): Promise<string> {
 // Discards an uploaded photo that was never sent (allowed only while no message uses it).
 export async function deleteUnsentAttachment(path: string): Promise<void> {
   await supabase.storage.from('chat-attachments').remove([path]);
+}
+
+// Hides a message for the caller only; the other person still sees it.
+export async function hideMessage(messageId: string): Promise<void> {
+  const { error } = await supabase.rpc('hide_message', { p_message: messageId });
+  if (error) throw error;
+}
+
+// Sender only, within 24 hours of sending (the server enforces both).
+export async function deleteMessageForEveryone(messageId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_message_for_everyone', { p_message: messageId });
+  if (error) throw error;
 }
 
 export async function setMuted(conversationId: string, userId: string, muted: boolean): Promise<void> {

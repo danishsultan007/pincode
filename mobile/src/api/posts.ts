@@ -3,6 +3,7 @@
 // reads/writes, votes, reactions, mark_solved) live in api/comments.ts.
 
 import { supabase } from '@/lib/supabase';
+import { readImage } from '@/lib/readImage';
 import type { PostCard, PostKind, PostType } from '@/types/models';
 
 export type PostsNearInput = {
@@ -115,14 +116,9 @@ export async function updatePost(id: string, input: UpdatePostInput): Promise<vo
 // (compose.tsx) so an animated GIF passes through unmodified instead of
 // being flattened to a single frame.
 export async function uploadPostImage(uid: string, uri: string): Promise<string> {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  const ext =
-    blob.type === 'image/gif' ? 'gif' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+  const { bytes, mime, ext } = await readImage(uri);
   const path = `${uid}/post-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from('post-images')
-    .upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+  const { error } = await supabase.storage.from('post-images').upload(path, bytes, { contentType: mime, upsert: true });
   if (error) throw error;
   const { data } = supabase.storage.from('post-images').getPublicUrl(path);
   return data.publicUrl;

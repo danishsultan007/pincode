@@ -47,7 +47,7 @@ src/
 
 - Router: Expo Router only, no `@react-navigation/*` (SDK 56+ dropped it).
 - Icons: a small hand-rolled `Icon` component on `react-native-svg` (no `@expo/vector-icons`).
-- Theme: light only, one teal accent. No hex colors outside `src/theme/tokens.ts`.
+- Theme: follows the phone's light/dark setting, one iris accent (`#4B41D6`), Plus Jakarta Sans font. No hex colors outside `src/theme/tokens.ts`.
 - Maps: `react-native-maps` on native, `leaflet`/`react-leaflet` on web, behind a shared
   `PostsMapProps` interface (`components/map/PostsMap.native.tsx` / `PostsMap.tsx`).
 - Data access: an untyped Supabase JS client plus hand-written types in `src/types/models.ts`.

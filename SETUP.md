@@ -46,7 +46,9 @@ do it if the migration in step 3 errors on `create extension`.
 
 ## 3. Run the database migrations
 
-The backend is plain SQL — there is no CLI requirement and no Edge Functions.
+The database is plain SQL, so you can set it up from the SQL editor with no install. There are also
+four small Edge Functions (sign-in by username/phone, password reset by username/phone, account
+deletion, chat photo clean-up). They need the Supabase CLI to deploy: see `RELEASING.md` section 7.
 
 ### Option A — SQL Editor (recommended, no install needed)
 
@@ -254,7 +256,7 @@ every phase in `MOBILE-PLAN.md` §9 (a phase's checks assume the earlier
 phases' data — for example P3–P8 assume the seed data from step 3 above):
 
 **Database (P1)**
-- [ ] All 12 migration files ran without error, in order.
+- [ ] All migration files ran without error, in order (26 at the time of writing; `RUN_ALL_MIGRATIONS.sql` has them all).
 - [ ] `seed.sql` returned a single row with count **26**.
 - [ ] `tests/smoke.sql` completed with no error (and left no data behind).
 

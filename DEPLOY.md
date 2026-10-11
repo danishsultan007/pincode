@@ -5,9 +5,18 @@ Stack: Supabase Cloud (backend), EAS (Android builds), Cloudflare Pages (web), P
 
 > Run commands from the repo root in PowerShell unless a step says `mobile/`. Use `npx.cmd` / `npm.cmd` if PowerShell blocks scripts.
 
+> **Status, October 2026.** This runbook was written as a plan; what actually exists today differs in two places.
+> The website is at `https://pincode-a54.pages.dev` (no custom domain yet) and auth emails go through **Gmail SMTP**
+> (`pincode.app.team@gmail.com`), not Resend. A custom domain, a domain mailbox and a proper email sender are still
+> recommended **before public launch** (sections 2 and 3a). For the day-to-day release process use `RELEASING.md`;
+> `ARCHITECTURE.md` explains how everything fits together.
+
 ---
 
-## 0. Before anything else: security patches (done in code, **you** apply them)
+## 0. Before anything else: security patches (historical, already applied on dev and prod)
+
+> The `supabase/PATCH_*.sql` files below are kept as history. Migrations are now applied with `supabase db push`
+> (see `RELEASING.md` section 6), and the same SQL lives in `supabase/migrations/`.
 
 The sign-in leak and account-deletion fixes need the SQL + Edge Functions deployed. See section 3 for the production project; for your current dev project:
 
@@ -39,7 +48,7 @@ The sign-in leak and account-deletion fixes need the SQL + Edge Functions deploy
 
 ---
 
-## 2. Domain + support mailbox (you)
+## 2. Domain + support mailbox (you) — planned, not done yet
 
 Buy a domain (e.g. `pincode.app` if available, or any). Then:
 
@@ -68,7 +77,7 @@ Buy a domain (e.g. `pincode.app` if available, or any). Then:
    update profiles set role = 'admin' where username = 'your_username';
    ```
 
-### 3a. Email via Resend
+### 3a. Email via Resend — planned (today: Gmail SMTP)
 Resend → add domain → add the DNS records (SPF, DKIM) at Cloudflare → create API key. Supabase → Authentication → SMTP Settings: host `smtp.resend.com`, port 465, user `resend`, password = API key, sender `no-reply@<your-domain>`. Then Authentication → Rate Limits: raise "emails sent" to ~100/hour.
 
 ### 3b. Google sign-in

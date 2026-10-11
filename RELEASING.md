@@ -208,7 +208,7 @@ The success signal is an error message beginning with `ALL ... PASSED` (the scri
 
 ## 7. Edge Function rules
 
-Functions: `login-with-identifier`, `request-password-reset` (both `--no-verify-jwt`), `delete-account`. Keep request/response shapes **additive** (new optional fields; never remove or rename fields old apps send or read).
+Functions: `login-with-identifier`, `request-password-reset` (both `--no-verify-jwt`), `delete-account`, and `cleanup-chat-attachments` (`--no-verify-jwt`, but protected by a shared secret header). Keep request/response shapes **additive** (new optional fields; never remove or rename fields old apps send or read).
 
 Dev first, test, then prod:
 
@@ -217,12 +217,21 @@ Dev first, test, then prod:
 npx.cmd supabase functions deploy login-with-identifier --no-verify-jwt --use-api --project-ref dmbkyzdkmpyqgyyvcygs
 npx.cmd supabase functions deploy request-password-reset --no-verify-jwt --use-api --project-ref dmbkyzdkmpyqgyyvcygs
 npx.cmd supabase functions deploy delete-account --use-api --project-ref dmbkyzdkmpyqgyyvcygs
+npx.cmd supabase functions deploy cleanup-chat-attachments --no-verify-jwt --use-api --project-ref dmbkyzdkmpyqgyyvcygs
 
 # prod (same commands, prod ref)
 npx.cmd supabase functions deploy login-with-identifier --no-verify-jwt --use-api --project-ref jfvnahkskwhxgefmoiaz
 npx.cmd supabase functions deploy request-password-reset --no-verify-jwt --use-api --project-ref jfvnahkskwhxgefmoiaz
 npx.cmd supabase functions deploy delete-account --use-api --project-ref jfvnahkskwhxgefmoiaz
+npx.cmd supabase functions deploy cleanup-chat-attachments --no-verify-jwt --use-api --project-ref jfvnahkskwhxgefmoiaz
 ```
+
+**`cleanup-chat-attachments` (chat photo retention).** It deletes chat photos older than 90 days, uploads never attached to a message (older than 24 h) and photos of messages a moderator removed. It is called daily (03:00 IST) by `.github/workflows/cleanup-attachments.yml` with the header `x-cleanup-secret`. One-time setup, on **prod**:
+
+1. Generate a long random value and set it as a function secret: `npx.cmd supabase secrets set CLEANUP_SECRET=<value> --project-ref jfvnahkskwhxgefmoiaz`.
+2. Add two GitHub repository secrets: `CLEANUP_SECRET` (the same value) and `CLEANUP_URL` (`https://jfvnahkskwhxgefmoiaz.supabase.co/functions/v1/cleanup-chat-attachments`).
+3. Test: a call without the header must return 403, with it `{"ok":true,"removed":N}`. A copy of the value is kept in `.secrets/` (never commit or paste it).
+4. Run it by hand any time: GitHub → Actions → "Chat attachment clean-up" → Run workflow.
 
 Deploy only the functions you changed. If you changed `supabase/functions/_shared`, redeploy every function that imports it.
 
@@ -236,6 +245,26 @@ npx.cmd supabase functions deploy <name> [--no-verify-jwt] --use-api --project-r
 Afterwards, commit the restored files (or `git restore` back to HEAD if you only needed a temporary revert) so the repo matches what is deployed.
 
 ---
+
+
+## 7b. Testing on a real phone (adb)
+
+Some bugs only appear on a real Android phone (photo uploads, push notifications, system dialogs, permissions). Before shipping UI or native-behavior changes, check them on the phone, not just in the web preview.
+
+**One-time setup.** Android platform-tools (`adb`) is installed at `C:\Users\Danish Sultan\android-platform-tools\platform-tools\adb.exe` (not on PATH). On the phone: Settings → About phone → tap Build number 7 times; Settings → Developer options → **USB debugging** on (on Samsung phones also turn **Auto Blocker** off); plug in with a data cable, set USB to File transfer, and tap **Allow** on the "Allow USB debugging?" prompt. Say **No** to the Windows Firewall prompt for adb (USB needs no network access). Optional: Developer options → "Stay awake" keeps the screen on while charging.
+
+```powershell
+$adb = "$env:USERPROFILE\android-platform-tools\platform-tools\adb.exe"
+& $adb devices -l                                   # must say "device" (not "unauthorized" or empty)
+& $adb shell am force-stop com.pincode.app          # restart the app twice to apply a fresh OTA
+& $adb shell monkey -p com.pincode.app -c android.intent.category.LAUNCHER 1
+& $adb shell am start -a android.intent.action.VIEW -d "pincode://settings" com.pincode.app   # deep link test
+& $adb shell screencap -p /sdcard/shot.png; & $adb pull /sdcard/shot.png .                     # screenshot
+& $adb shell uiautomator dump /sdcard/ui.xml; & $adb pull /sdcard/ui.xml .                      # screen elements and positions
+& $adb logcat -d | Select-String "ReactNative"                                                   # app log
+```
+
+**Rules.** Only operate the pincode app. Use harmless test files you generate yourself, never the owner's personal photos. Do not unlock the phone, sign out or confirm destructive dialogs. Check the Settings → Version row (it shows the OTA update id) to know which update the phone is running. If `adb devices` is empty, toggle USB debugging off/on and replug.
 
 ## 8. The minimum-supported-version gate
 
@@ -317,7 +346,7 @@ npx.cmd eas-cli update:republish --group <GOOD_GROUPID> --message "republish goo
 # or republish the latest group of a channel
 npx.cmd eas-cli update:republish --channel production --message "republish" --non-interactive
 # go back to the JS bundle embedded in the installed build
-npx.cmd eas-cli update:roll-back-to-embedded --channel production --runtime-version 1.0.0 --message "back to embedded" --non-interactive
+npx.cmd eas-cli update:roll-back-to-embedded --channel production --runtime-version <current app version, e.g. 1.1.0> --message "back to embedded" --non-interactive
 ```
 
 (Add `-p android` to limit to Android.) Phones recover on their next start. If the bad update was a hotfix on another branch, tag the rollback too (`v1.1.0+ota.N`).

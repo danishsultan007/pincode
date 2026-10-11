@@ -1,7 +1,15 @@
 # supabase (pincode)
 
-SQL-only backend: no Edge Functions, no CLI required. Everything here runs through
-the Supabase Dashboard's SQL editor, or the Supabase CLI if you prefer it.
+The pincode backend: SQL migrations (the whole database) plus four small Edge Functions
+in `functions/`. The SQL runs through the Supabase Dashboard's SQL editor or the Supabase CLI;
+the functions need the CLI to deploy (see `../RELEASING.md` section 7).
+
+| Edge Function | Purpose |
+|---|---|
+| `login-with-identifier` | sign in with a username or phone number (rate-limited) |
+| `request-password-reset` | password reset by username or phone, without revealing the email |
+| `delete-account` | deletes the caller's files, chat photos, messages and auth user |
+| `cleanup-chat-attachments` | daily retention job for chat photos (90 days; protected by a secret header) |
 
 ## Order to run
 
@@ -24,12 +32,23 @@ order, and later migrations rely on functions and tables defined earlier:
     post/comment/message insert) and `search_path` on three helper functions that
     were missing it.
 
+The list above is only the original 12. There are **26 migration files** in total (as of
+October 2026). The later ones add post images, communities polish, login throttling, terms and
+feedback, the `app_config` version gate, security fixes (null-auth checks, revoked anon RPCs),
+private chat photos, message deletion and push priority. **The `migrations/` folder is the source
+of truth: apply every file in filename order** (`supabase db push`, see `../RELEASING.md`
+section 6), and keep `RUN_ALL_MIGRATIONS.sql` in sync.
+
 Then, optionally:
 
 - `seed.sql` — demo data (profiles, posts, communities, etc.) for local development
   and the acceptance checks in `MOBILE-PLAN.md` §9. Safe to skip in production.
 - `tests/smoke.sql` — runs inside a transaction and rolls back at the end; asserts
-  RLS and trigger behavior. Safe to run against a project that already has data.
+  RLS and trigger behavior. It needs `seed.sql`, so run it on **dev only**.
+- Regression tests that are safe on any project (each rolls back and ends with an error
+  "ALL ... PASSED (rolled back)" on success): `tests/security_rpc_access.sql`,
+  `tests/null_auth_checks.sql`, `tests/chat_attachments.sql`, `tests/delete_messages.sql`.
+  Run with `npx.cmd supabase db query --linked --file supabase/tests/<file>.sql`.
 
 ### Option A — Dashboard SQL editor
 

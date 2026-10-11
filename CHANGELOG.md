@@ -15,7 +15,25 @@
 
 ## Unreleased
 
+Everything below shipped to testers as over-the-air updates on top of 1.1.0 (tags `v1.1.0+ota.2` to `v1.1.0+ota.13`); no new native build yet.
+
+### Testers
+- **Photos in chat**: tap the camera button next to the message box to send a photo (JPEG, PNG or WebP, up to 3 MB). Tap a photo to see it full screen. Photos are private to the two people in the chat and are removed automatically after 90 days. You can't send photos in a message request until it is accepted.
+- **Delete messages**: long-press a message for *Delete for me*, or *Delete for everyone* (your own messages, within 24 hours). Long-press someone else's message to report it.
+- **Chat fixes**: a message that arrives while you are on the Inbox now shows when you open the chat. The chat you already have open no longer shows pop-ups or notification-tray entries, and message notifications are now sent at high priority so they should arrive promptly instead of in bursts (still being watched).
+- **Cleaner menus and dialogs**: the "..." and long-press menus open next to your finger, and confirmation dialogs now match the app's style.
+- **Update banner**: when a new version is downloaded you see "Update ready, Restart", so you no longer need to force-close the app.
+- **Profile**: your posts and stats update right after you post, answer or join a community. The Settings and Sign out buttons moved to the gear icon (Settings) only.
+- **Fixes**: post and profile photos upload again on Android; show/hide password on every password field; buttons respond across their whole area; the post screen no longer overlaps the Android navigation bar; Google sign-in works on the first try.
+
 ### Internal
+- Migrations (applied to dev and prod): `20261012000100_chat_attachments` (private `chat-attachments` bucket, upload gate `can_attach`, message photo columns), `20261012000200_chat_attachments_removed_cleanup`, `20261012000300_chat_photo_cap_and_push_priority` (3 MB cap, pushes sent at high priority with a 1 h expiry), `20261012000400_delete_messages` (`message_hides`, `hide_message`, `delete_message_for_everyone`, tombstones; reported or held messages cannot be deleted for everyone).
+- Edge Functions: `delete-account` now also removes chat photos (including the other person's photos in the user's conversations); new `cleanup-chat-attachments` (daily from GitHub Actions `cleanup-attachments.yml`; needs the `CLEANUP_SECRET` function secret and GitHub secrets `CLEANUP_URL` and `CLEANUP_SECRET`, see RELEASING.md section 7).
+- App: storage uploads send an ArrayBuffer with an explicit content type (a React Native Blob in multipart form data reached Storage as text/plain); shared `invalidateAfter` cache map plus refresh-on-focus and cache clear on account switch; `Stack.Protected` route guard for signed-in-only screens; themed confirmation dialogs and menus on Android; `UpdateBanner`; edit-profile and notification settings wait for the profile to load.
+- Planned for the next native build (1.2.0): shrink photos on the phone with `expo-image-manipulator` (WhatsApp-style) and take a photo with the camera (needs the camera permission in `app.config.ts`).
+- Dev tooling: Android platform-tools (`adb`) phone link documented in RELEASING.md section 7b.
+
+### Internal (earlier, security and web)
 - Web build fix for Cloudflare Pages dropping `node_modules` (fonts and router icons now served from assets/vendor).
 - Security hardening from the audit:
   - Fixed null-auth checks in database functions (an unauthenticated caller no longer slips past `auth.uid()` comparisons).

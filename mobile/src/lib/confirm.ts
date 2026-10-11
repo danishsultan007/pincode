@@ -35,7 +35,7 @@ export function registerWebActionSheetHost(fn: typeof webActionSheetHost): void 
 }
 
 export function confirmAsync(title: string, message?: string, options: ConfirmOptions = {}): Promise<boolean> {
-  const confirmLabel = options.confirmLabel ?? copy.common.done;
+  const confirmLabel = options.confirmLabel ?? 'Confirm';
   const cancelLabel = options.cancelLabel ?? copy.common.cancel;
   const destructive = !!options.destructive;
 

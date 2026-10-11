@@ -43,7 +43,9 @@ export default function Settings() {
   if (!me) return null;
 
   const handleSignOut = async () => {
-    const ok = await confirmAsync(copy.settings.signOut, 'Are you sure you want to sign out?');
+    const ok = await confirmAsync(copy.settings.signOut, 'Are you sure you want to sign out?', {
+      confirmLabel: copy.settings.signOut,
+    });
     if (!ok) return;
     await signOut();
     router.replace('/welcome');
@@ -53,7 +55,7 @@ export default function Settings() {
     const ok1 = await confirmAsync(
       copy.settings.deleteAccount,
       'This permanently deletes your account and everything you posted. This cannot be undone.',
-      { destructive: true }
+      { destructive: true, confirmLabel: 'Continue' }
     );
     if (!ok1) return;
     const ok2 = await confirmAsync('Are you absolutely sure?', 'This is your final confirmation.', {

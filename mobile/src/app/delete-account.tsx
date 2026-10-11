@@ -28,7 +28,7 @@ export default function DeleteAccount() {
     const ok1 = await confirmAsync(
       copy.settings.deleteAccount,
       'This permanently deletes your account, posts, comments, messages and uploaded photos. This cannot be undone.',
-      { destructive: true }
+      { destructive: true, confirmLabel: 'Continue' }
     );
     if (!ok1) return;
     const ok2 = await confirmAsync('Are you absolutely sure?', 'This is your final confirmation.', {

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { supabase, uniqueChannel } from '@/lib/supabase';
+import { currentOpenChatId } from '@/lib/push';
 import { useAuth } from './AuthProvider';
 import { useToast } from './ToastProvider';
 import type { NotificationRow } from '@/types/models';
@@ -31,6 +32,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
           queryClient.invalidateQueries({ queryKey: ['inboxCounts'] });
           const row = payload.new as NotificationRow;
+          // No pop-up for the chat that is already open on screen.
+          if (currentOpenChatId && row.data?.url === `/chat/${currentOpenChatId}`) return;
           toastRef.current.show(row.title, {
             actionLabel: row.data?.url ? 'Open' : undefined,
             onAction: row.data?.url ? () => router.push(row.data.url as string) : undefined,

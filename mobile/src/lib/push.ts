@@ -22,14 +22,35 @@ Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data as { conversationId?: string } | undefined;
     const isOpenChat = !!data?.conversationId && data.conversationId === currentOpenChatId;
+    // In the chat the message is already on screen: no banner AND no tray entry (a hidden
+    // banner alone still left the notification in the shade).
     return {
       shouldShowBanner: !isOpenChat,
-      shouldShowList: true,
+      shouldShowList: !isOpenChat,
       shouldPlaySound: false,
       shouldSetBadge: false,
     };
   },
 });
+
+// Clears notifications already sitting in the shade for a conversation, called when the
+// user opens that chat (they have now seen the messages).
+export async function dismissNotificationsForChat(conversationId: string): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    await Promise.all(
+      presented
+        .filter((n) => {
+          const d = n.request.content.data as { conversationId?: string; url?: string } | undefined;
+          return d?.conversationId === conversationId || d?.url === `/chat/${conversationId}`;
+        })
+        .map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
+    );
+  } catch {
+    // Best effort only.
+  }
+}
 
 // Build-time project id from app.config.ts (extra.eas.projectId), falling back to the env var.
 function easProjectId(): string {

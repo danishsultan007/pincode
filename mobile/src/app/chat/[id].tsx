@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, StyleSheet } from 'react-native';
+import { AppState, FlatList, KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Screen } from '@/components/ui/Screen';
@@ -28,7 +28,7 @@ import {
   useSetMuted,
 } from '@/hooks/useInbox';
 import { supabase, uniqueChannel } from '@/lib/supabase';
-import { setCurrentOpenChatId } from '@/lib/push';
+import { dismissNotificationsForChat, setCurrentOpenChatId } from '@/lib/push';
 import { actionSheet, confirmAsync } from '@/lib/confirm';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
@@ -106,6 +106,15 @@ export default function ChatScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, queryClient]);
 
+  // Back in the foreground with this chat still open: clear what arrived meanwhile.
+  useEffect(() => {
+    if (!id) return;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && isFocusedRef.current) dismissNotificationsForChat(id);
+    });
+    return () => sub.remove();
+  }, [id]);
+
   // Mark read on focus, and remember the open chat id so PushProvider's
   // notification handler suppresses the banner for this conversation.
   useFocusEffect(
@@ -113,6 +122,7 @@ export default function ChatScreen() {
       isFocusedRef.current = true;
       if (id) {
         setCurrentOpenChatId(id);
+        dismissNotificationsForChat(id);
         markRead.mutate();
       }
       return () => {
@@ -184,7 +194,7 @@ export default function ChatScreen() {
     if (photoSending || !id || !user) return;
     setPhotoSending(true);
     try {
-      if (!uploadedPath.current) uploadedPath.current = await chatApi.uploadChatImage(id, user.id, photo.blob);
+      if (!uploadedPath.current) uploadedPath.current = await chatApi.uploadChatImage(id, user.id, photo.bytes, photo.mime);
       await sendMessage.mutateAsync({
         body: text,
         attachment: { path: uploadedPath.current, width: photo.width, height: photo.height },
@@ -203,7 +213,11 @@ export default function ChatScreen() {
       } else {
         // The saved upload is gone (the 24 h orphan clean-up removed it): upload afresh next time.
         if (e?.message?.includes('bad_attachment')) uploadedPath.current = null;
-        toast.show(messageFor(err));
+        toast.show(
+          e?.message?.startsWith('upload_failed: ')
+            ? `Photo upload failed (${e.message.slice('upload_failed: '.length)})`
+            : messageFor(err)
+        );
       }
     } finally {
       setPhotoSending(false);

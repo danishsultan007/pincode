@@ -85,7 +85,7 @@ const MESSAGES: Record<ErrorKey, string> = {
   attachments_unavailable: "Photos can't be sent in this chat right now. Try again later.",
   bad_attachment: "That photo couldn't be sent. Try another one.",
   attachment_too_large: 'That photo is too large. Try a smaller one.',
-  photo_too_large: 'That photo is too large (over 1.5 MB). Try a smaller one or crop it.',
+  photo_too_large: 'That photo is too large (over 3 MB). Try a smaller one or crop it.',
   content_blocked: "This contains language that isn't allowed on pincode.",
   not_a_member: "You're not a member of this community.",
   community_unavailable: "This community isn't available.",

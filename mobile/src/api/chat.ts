@@ -115,17 +115,20 @@ function randomId(): string {
 
 const EXT_BY_MIME: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
-export async function uploadChatImage(conversationId: string, uid: string, blob: Blob): Promise<string> {
-  const mime = blob.type in EXT_BY_MIME ? blob.type : 'image/jpeg';
+// The bytes go up as an ArrayBuffer with an explicit content type. (A React Native Blob
+// inside multipart form data reached Storage without a usable type and was refused.)
+export async function uploadChatImage(conversationId: string, uid: string, bytes: ArrayBuffer, mimeType: string): Promise<string> {
+  const mime = mimeType in EXT_BY_MIME ? mimeType : 'image/jpeg';
   const path = `${conversationId}/${uid}/${randomId()}.${EXT_BY_MIME[mime]}`;
-  const { error } = await supabase.storage.from('chat-attachments').upload(path, blob, { contentType: mime, upsert: false });
+  const { error } = await supabase.storage.from('chat-attachments').upload(path, bytes, { contentType: mime, upsert: false });
   if (error) {
     // Storage reports a refused upload as an RLS violation; say what it means.
     if (/row-level security|unauthorized|not allowed/i.test(error.message)) throw new Error('attachments_unavailable');
-    if (/mime/i.test(error.message)) throw new Error('bad_attachment');
     if (/maximum|too large|payload/i.test(error.message)) throw new Error('attachment_too_large');
     if (/bucket not found/i.test(error.message)) throw new Error('attachments_unavailable');
-    throw error;
+    if (/network request failed|fetch failed|failed to fetch/i.test(error.message)) throw new Error('Network request failed');
+    // Anything else (e.g. an unsupported type): keep the real reason so it can be diagnosed.
+    throw new Error(`upload_failed: ${error.message}`);
   }
   return path;
 }

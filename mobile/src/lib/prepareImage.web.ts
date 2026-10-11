@@ -1,8 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 
-export type PreparedImage = { blob: Blob; previewUri: string; width: number; height: number };
+export type PreparedImage = { bytes: ArrayBuffer; mime: string; previewUri: string; width: number; height: number };
 
-export const MAX_CHAT_IMAGE_BYTES = 1_500_000;
+export const MAX_CHAT_IMAGE_BYTES = 3_000_000;
 const LONG_EDGE = 1600;
 
 // Web: pick, then redraw on a canvas scaled to a 1600 px long edge and re-encode as
@@ -30,5 +30,5 @@ export async function pickChatImage(): Promise<PreparedImage | null> {
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.75));
   if (!blob) throw new Error('bad_attachment');
   if (blob.size > MAX_CHAT_IMAGE_BYTES) throw new Error('photo_too_large');
-  return { blob, previewUri: URL.createObjectURL(blob), width, height };
+  return { bytes: await blob.arrayBuffer(), mime: 'image/jpeg', previewUri: URL.createObjectURL(blob), width, height };
 }

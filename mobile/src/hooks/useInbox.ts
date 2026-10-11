@@ -138,6 +138,29 @@ export function useSendMessage(conversationId: string) {
   });
 }
 
+// React to a chat message (one reaction per person). The cache is updated right away; the server
+// change also reaches both people through Realtime.
+export function useReactToMessage(conversationId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, reaction }: { messageId: string; reaction: string | null }) =>
+      chatApi.setMessageReaction(messageId, reaction),
+    onSuccess: (_data, { messageId, reaction }) => {
+      if (!user) return;
+      queryClient.setQueryData<Message[]>(['messages', conversationId], (prev) =>
+        (prev ?? []).map((m) => {
+          if (m.id !== messageId) return m;
+          const next = { ...(m.reactions ?? {}) };
+          if (reaction) next[user.id] = reaction;
+          else delete next[user.id];
+          return { ...m, reactions: next };
+        })
+      );
+    },
+  });
+}
+
 // Delete a chat message: 'me' hides it for the caller only, 'everyone' turns it into a
 // "This message was deleted" tombstone for both people (sender, within 24 hours).
 export function useDeleteMessage(conversationId: string) {

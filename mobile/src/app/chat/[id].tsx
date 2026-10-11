@@ -12,6 +12,7 @@ import { CommentComposer } from '@/components/comments/CommentComposer';
 import { RequestBar } from '@/components/chat/RequestBar';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { PhotoViewer } from '@/components/chat/PhotoViewer';
+import { MessageMenu, type MessageMenuTarget } from '@/components/chat/MessageMenu';
 import { pickChatImage, type PreparedImage } from '@/lib/prepareImage';
 import * as chatApi from '@/api/chat';
 import { useAuth } from '@/providers/AuthProvider';
@@ -25,6 +26,7 @@ import {
   useMyMembership,
   useRespondToRequest,
   useDeleteMessage,
+  useReactToMessage,
   useSendMessage,
   useSetMuted,
 } from '@/hooks/useInbox';
@@ -72,6 +74,8 @@ export default function ChatScreen() {
 
   const sendMessage = useSendMessage(id ?? '');
   const deleteMessage = useDeleteMessage(id ?? '');
+  const reactToMessage = useReactToMessage(id ?? '');
+  const [menu, setMenu] = useState<MessageMenuTarget | null>(null);
   const respond = useRespondToRequest(id ?? '');
   const markRead = useMarkConversationRead(id);
   const setMuted = useSetMuted(id ?? '');
@@ -240,7 +244,7 @@ export default function ChatScreen() {
 
   // Long-press a message: delete for me (anyone), delete for everyone (sender only, and only
   // within 24 hours of sending), or report (other people's messages).
-  const messageMenu = (m: Message) => {
+  const messageMenu = (m: Message, point: { x: number; y: number }) => {
     const mine = m.sender_id === user?.id;
     const options: { label: string; destructive?: boolean; onPress: () => void }[] = [];
     if (!mine && !m.deleted_at) {
@@ -280,7 +284,20 @@ export default function ChatScreen() {
         },
       });
     }
-    actionSheet(copy.chat.messageOptions, options);
+    const myReaction = user ? m.reactions?.[user.id] ?? null : null;
+    setMenu({
+      x: point.x,
+      y: point.y,
+      options,
+      myReaction,
+      // Reactions: accepted chats only, on live messages (the server enforces the same).
+      canReact: conversation.status === 'accepted' && !m.deleted_at && !m.is_system && m.mod_status === 'visible',
+      onReact: (code) =>
+        reactToMessage.mutate(
+          { messageId: m.id, reaction: myReaction === code ? null : code },
+          { onError: (err) => toast.show(messageFor(err)) }
+        ),
+    });
   };
 
   const handleRespond = async (action: 'accept' | 'decline' | 'block') => {
@@ -352,6 +369,7 @@ export default function ChatScreen() {
               mine={mine}
               senderName={otherProfile?.display_name}
               onOpenPhoto={setViewerUri}
+              myReaction={user ? item.reactions?.[user.id] ?? null : null}
               onLongPress={item.is_system ? undefined : messageMenu}
             />
           );
@@ -400,6 +418,7 @@ export default function ChatScreen() {
       )}
       </KeyboardAvoidingView>
       <PhotoViewer uri={viewerUri} onClose={() => setViewerUri(null)} />
+      <MessageMenu target={menu} onClose={() => setMenu(null)} />
     </Screen>
   );
 }

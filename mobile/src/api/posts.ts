@@ -156,22 +156,11 @@ export async function togglePostVote(postId: string, on: boolean): Promise<void>
   }
 }
 
+// One reaction per person: `on` sets (or switches to) `reaction`, otherwise the caller's reaction
+// is cleared. The server function replaces the old one in a single transaction.
 export async function togglePostReaction(postId: string, reaction: string, on: boolean): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const uid = userData.user?.id;
-  if (!uid) throw new Error('not_authenticated');
-  if (on) {
-    const { error } = await supabase.from('post_reactions').insert({ post_id: postId, user_id: uid, reaction });
-    if (error) throw error;
-  } else {
-    const { error } = await supabase
-      .from('post_reactions')
-      .delete()
-      .eq('post_id', postId)
-      .eq('user_id', uid)
-      .eq('reaction', reaction);
-    if (error) throw error;
-  }
+  const { error } = await supabase.rpc('set_post_reaction', { p_post: postId, p_reaction: on ? reaction : null });
+  if (error) throw error;
 }
 
 export async function confirmAlert(postId: string, kind: 'still_on' | 'resolved'): Promise<void> {

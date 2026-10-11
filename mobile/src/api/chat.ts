@@ -149,6 +149,12 @@ export async function deleteUnsentAttachment(path: string): Promise<void> {
   await supabase.storage.from('chat-attachments').remove([path]);
 }
 
+// One reaction per person on a chat message: a code sets (or switches) it, null removes it.
+export async function setMessageReaction(messageId: string, reaction: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_message_reaction', { p_message: messageId, p_reaction: reaction });
+  if (error) throw error;
+}
+
 // Hides a message for the caller only; the other person still sees it.
 export async function hideMessage(messageId: string): Promise<void> {
   const { error } = await supabase.rpc('hide_message', { p_message: messageId });

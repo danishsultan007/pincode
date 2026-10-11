@@ -363,6 +363,8 @@ export type Message = {
   attachment_width?: number | null;
   attachment_height?: number | null;
   deleted_at?: ISODateString | null;
+  // { "<user id>": "<reaction code>" }: one reaction per person (see set_message_reaction)
+  reactions?: Record<string, string> | null;
 };
 
 // ---------------------------------------------------------------------------

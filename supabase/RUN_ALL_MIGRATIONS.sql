@@ -3205,3 +3205,165 @@ end $$;
 revoke execute on function public.delete_message_for_everyone(uuid) from public, anon;
 grant execute on function public.delete_message_for_everyone(uuid) to authenticated;
 
+
+-- ---- 20261012000500_single_reaction.sql ----
+-- One reaction per person per post and per comment (like Facebook / WhatsApp / LinkedIn).
+--
+-- Before: the key was (post, user, reaction), so one person could add all six reactions.
+-- Now:
+--   1. Existing duplicates are collapsed to each user's newest reaction. The deletes fire the
+--      existing counter triggers, so reaction_counts stay correct.
+--   2. A unique index (post/comment, user) makes a second reaction impossible, even for old app
+--      versions that still insert directly (they get a harmless "already taken" error).
+--   3. set_post_reaction / set_comment_reaction replace or clear the caller's reaction in one
+--      transaction: pass a reaction to set or switch it, or null to remove it.
+
+set search_path = public, extensions;
+
+-- 1) collapse duplicates, keeping the newest reaction per user
+delete from public.post_reactions a using public.post_reactions b
+ where a.post_id = b.post_id and a.user_id = b.user_id
+   and (a.created_at, a.reaction) < (b.created_at, b.reaction);
+
+delete from public.comment_reactions a using public.comment_reactions b
+ where a.comment_id = b.comment_id and a.user_id = b.user_id
+   and (a.created_at, a.reaction) < (b.created_at, b.reaction);
+
+-- 2) enforce it
+create unique index if not exists post_reactions_one_per_user on public.post_reactions (post_id, user_id);
+create unique index if not exists comment_reactions_one_per_user on public.comment_reactions (comment_id, user_id);
+
+-- Old app versions still insert directly. Instead of failing with "already taken" when they switch
+-- reaction, replace the person's previous reaction first (the delete keeps the counters right).
+-- Inserting the SAME reaction again still fails, as before.
+create or replace function public.reaction_replace_before_insert() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if tg_table_name = 'post_reactions' then
+    delete from public.post_reactions where post_id = new.post_id and user_id = new.user_id and reaction <> new.reaction;
+  else
+    delete from public.comment_reactions where comment_id = new.comment_id and user_id = new.user_id and reaction <> new.reaction;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.reaction_replace_before_insert() from public, anon;
+drop trigger if exists t05_post_reactions_single on public.post_reactions;
+create trigger t05_post_reactions_single before insert on public.post_reactions
+  for each row execute function public.reaction_replace_before_insert();
+drop trigger if exists t05_comment_reactions_single on public.comment_reactions;
+create trigger t05_comment_reactions_single before insert on public.comment_reactions
+  for each row execute function public.reaction_replace_before_insert();
+
+-- 3) set / switch / clear
+create or replace function public.set_post_reaction(p_post uuid, p_reaction text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'not_authenticated'; end if;
+  -- Removing your own reaction is always allowed; adding one needs an active account.
+  if p_reaction is not null and not public.can_participate(uid) then raise exception 'not_allowed'; end if;
+  if p_reaction is not null and p_reaction not in ('like','love','haha','wow','thanks','celebrate') then
+    raise exception 'bad_reaction';
+  end if;
+  -- Two quick switches by the same person must not interleave.
+  perform pg_advisory_xact_lock(hashtext(p_post::text || uid::text));
+  delete from public.post_reactions where post_id = p_post and user_id = uid and reaction is distinct from p_reaction;
+  if p_reaction is not null then
+    insert into public.post_reactions (post_id, user_id, reaction) values (p_post, uid, p_reaction)
+    on conflict do nothing;
+  end if;
+end $$;
+
+create or replace function public.set_comment_reaction(p_comment uuid, p_reaction text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'not_authenticated'; end if;
+  if p_reaction is not null and not public.can_participate(uid) then raise exception 'not_allowed'; end if;
+  if p_reaction is not null and p_reaction not in ('like','love','haha','wow','thanks','celebrate') then
+    raise exception 'bad_reaction';
+  end if;
+  perform pg_advisory_xact_lock(hashtext(p_comment::text || uid::text));
+  delete from public.comment_reactions where comment_id = p_comment and user_id = uid and reaction is distinct from p_reaction;
+  if p_reaction is not null then
+    insert into public.comment_reactions (comment_id, user_id, reaction) values (p_comment, uid, p_reaction)
+    on conflict do nothing;
+  end if;
+end $$;
+
+revoke execute on function public.set_post_reaction(uuid, text) from public, anon;
+revoke execute on function public.set_comment_reaction(uuid, text) from public, anon;
+grant execute on function public.set_post_reaction(uuid, text) to authenticated;
+grant execute on function public.set_comment_reaction(uuid, text) to authenticated;
+
+-- ---- 20261012000600_message_reactions.sql ----
+-- Reactions on chat messages (one per person per message, like post reactions).
+--
+-- Stored on the message itself as a small JSON map { "<user id>": "<reaction>" }. Two reasons:
+--   * One entry per user per message is natural (the user id is the key).
+--   * A change is an UPDATE of the messages row, which Realtime delivers to both people with the
+--     messages read policy applied. (A separate reactions table would broadcast its DELETE events
+--     without any access check, leaking who reacted to what.)
+-- Users have no UPDATE grant on messages, so the only way to change reactions is the function below.
+-- Reactions are allowed only in accepted direct chats, between people who have not blocked each
+-- other, on visible messages the caller can see. Deleting a message for everyone clears them.
+
+set search_path = public, extensions;
+
+alter table public.messages add column reactions jsonb not null default '{}'::jsonb;
+
+create or replace function public.set_message_reaction(p_message uuid, p_reaction text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid := auth.uid(); m public.messages; c public.conversations;
+begin
+  if uid is null then raise exception 'not_authenticated'; end if;
+  if not public.can_participate(uid) then raise exception 'not_allowed'; end if;
+  if p_reaction is not null and p_reaction not in ('like','love','haha','wow','thanks','celebrate') then
+    raise exception 'bad_reaction';
+  end if;
+  select * into m from public.messages where id = p_message for update;
+  if not found or m.is_system or m.deleted_at is not null or m.mod_status <> 'visible' then
+    raise exception 'not_allowed';
+  end if;
+  if not public.is_conversation_member(m.conversation_id) or public.message_hidden_for_me(p_message) then
+    raise exception 'not_allowed';
+  end if;
+  select * into c from public.conversations where id = m.conversation_id;
+  if c.kind <> 'direct' or c.status <> 'accepted' then raise exception 'not_allowed'; end if;
+  if public.is_blocked_between(c.user_low, c.user_high) then raise exception 'blocked'; end if;
+  update public.messages
+     set reactions = case when p_reaction is null then reactions - uid::text
+                          else jsonb_set(reactions, array[uid::text], to_jsonb(p_reaction), true) end
+   where id = p_message;
+end $$;
+revoke execute on function public.set_message_reaction(uuid, text) from public, anon;
+grant execute on function public.set_message_reaction(uuid, text) to authenticated;
+
+-- Deleting a message for everyone also clears its reactions (same function as before, one extra column).
+create or replace function public.delete_message_for_everyone(p_message uuid) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid := auth.uid(); m public.messages;
+begin
+  if uid is null then raise exception 'not_authenticated'; end if;
+  select * into m from public.messages where id = p_message for update;
+  if not found or m.is_system or m.sender_id is distinct from uid then raise exception 'not_allowed'; end if;
+  if not public.is_conversation_member(m.conversation_id) then raise exception 'not_allowed'; end if;
+  if m.deleted_at is not null then return; end if;
+  if m.created_at < now() - interval '24 hours' then raise exception 'delete_window_passed'; end if;
+  -- Moderation evidence: a message that was held, reported or queued for review cannot be
+  -- wiped by its sender (the content must stay available to the reviewers).
+  if m.mod_status <> 'visible'
+     or exists (select 1 from public.reports r where r.target_type = 'message' and r.target_id = p_message)
+     or exists (select 1 from public.moderation_queue q where q.target_type = 'message' and q.target_id = p_message)
+  then raise exception 'under_review'; end if;
+  update public.messages
+     set deleted_at = now(), body = '', attachment_path = null, attachment_mime = null,
+         attachment_width = null, attachment_height = null, reactions = '{}'::jsonb
+   where id = p_message;
+  -- If it was the latest message, the inbox preview must not keep showing its text.
+  update public.conversations set last_message_preview = 'This message was deleted'
+   where id = m.conversation_id and last_message_at = m.created_at and last_sender_id = uid;
+  -- A pending request's notification carries a copy of the text: blank it too.
+  update public.notifications set body = ''
+   where conversation_id = m.conversation_id and kind = 'message_request';
+end $$;

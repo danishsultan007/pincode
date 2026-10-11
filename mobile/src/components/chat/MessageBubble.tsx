@@ -1,9 +1,10 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { GestureResponderEvent, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { useAttachmentUrl } from '@/hooks/useInbox';
 import { fmtTime } from '@/lib/format';
 import { copy } from '@/lib/copy';
+import { REACTIONS } from '@/lib/constants';
 import { colors, radius, space } from '@/theme/tokens';
 import type { Message } from '@/types/models';
 
@@ -12,10 +13,19 @@ export type MessageBubbleProps = {
   mine: boolean;
   senderName?: string;
   onOpenPhoto?: (uri: string) => void;
-  onLongPress?: (message: Message) => void;
+  myReaction?: string | null;
+  // Long-press (or tap on the reactions): where the finger was, so the menu opens next to it.
+  onLongPress?: (message: Message, point: { x: number; y: number }) => void;
 };
 
 const PHOTO_W = 220;
+
+// Reactions on a message as [glyph, count] pairs in the usual order.
+function summarizeReactions(reactions: Message['reactions']): { glyph: string; count: number }[] {
+  const counts: Record<string, number> = {};
+  for (const code of Object.values(reactions ?? {})) counts[code] = (counts[code] ?? 0) + 1;
+  return REACTIONS.filter((r) => counts[r.code]).map((r) => ({ glyph: r.glyph, count: counts[r.code] }));
+}
 
 // A private chat photo: signed link fetched on demand, sized from the stored
 // width/height so the list does not jump when it loads. A file removed by the
@@ -31,7 +41,7 @@ function AttachmentImage({
   mine: boolean;
   senderName?: string;
   onOpen?: (uri: string) => void;
-  onLongPress?: () => void;
+  onLongPress?: (e: GestureResponderEvent) => void;
 }) {
   const { data: uri, isError, error, refetch } = useAttachmentUrl(message.attachment_path);
   const expired = isError && (error as Error | null)?.message === 'photo_expired';
@@ -97,7 +107,7 @@ function AttachmentImage({
 // the "pincode Team" conversation) renders full-width, centered, no bubble
 // side. A held message (mod_status !== 'visible') still renders for its own
 // sender (RLS allows that) but shows the held placeholder instead of the body.
-export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPress }: MessageBubbleProps) {
+export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPress, myReaction }: MessageBubbleProps) {
   const deleted = !!message.deleted_at;
   const held = message.mod_status !== 'visible' && !deleted;
   const hasPhoto = !!message.attachment_path && !held && !deleted;
@@ -118,10 +128,16 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
     );
   }
 
+  const openMenu = onLongPress
+    ? (e: GestureResponderEvent) => onLongPress(message, { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY })
+    : undefined;
+  const reactionEntries = held || deleted ? [] : summarizeReactions(message.reactions);
+
   return (
     <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
+      <View style={[styles.col, { alignItems: mine ? 'flex-end' : 'flex-start' }]}>
       <Pressable
-        onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+        onLongPress={openMenu}
         delayLongPress={350}
         style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs, hasPhoto ? styles.bubbleWithPhoto : null]}
       >
@@ -130,7 +146,7 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
             mine={mine}
             senderName={senderName}
             onOpen={onOpenPhoto}
-            onLongPress={onLongPress ? () => onLongPress(message) : undefined}
+            onLongPress={openMenu}
           /> : null}
         {showText ? (
           <Text
@@ -147,6 +163,23 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
           {fmtTime(message.created_at)}
         </Text>
       </Pressable>
+      {reactionEntries.length ? (
+        <Pressable
+          onPress={openMenu}
+          accessibilityRole="button"
+          accessibilityLabel={`Reactions: ${reactionEntries.map((r) => r.glyph).join(' ')}`}
+          hitSlop={6}
+          style={[styles.reactPill, myReaction ? styles.reactPillMine : null]}
+        >
+          {reactionEntries.map((r) => (
+            <Text key={r.glyph} variant="meta">
+              {r.glyph}
+              {r.count > 1 ? ` ${r.count}` : ''}
+            </Text>
+          ))}
+        </Pressable>
+      ) : null}
+      </View>
     </View>
   );
 }
@@ -158,7 +191,22 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', paddingHorizontal: space.s3, paddingVertical: 2 },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '80%', borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 9, gap: 2 },
+  col: { maxWidth: '80%' },
+  reactPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: -6,
+    marginHorizontal: 10,
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  reactPillMine: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  bubble: { borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 9, gap: 2 },
   bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: radius.xs },
   bubbleTheirs: {
     backgroundColor: colors.surface,

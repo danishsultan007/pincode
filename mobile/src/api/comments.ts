@@ -75,22 +75,11 @@ export async function toggleCommentVote(commentId: string, on: boolean): Promise
   }
 }
 
+// One reaction per person: `on` sets (or switches to) `reaction`, otherwise the caller's reaction
+// is cleared (see set_comment_reaction).
 export async function toggleCommentReaction(commentId: string, reaction: ReactionCode, on: boolean): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const uid = userData.user?.id;
-  if (!uid) throw new Error('not_authenticated');
-  if (on) {
-    const { error } = await supabase.from('comment_reactions').insert({ comment_id: commentId, user_id: uid, reaction });
-    if (error) throw error;
-  } else {
-    const { error } = await supabase
-      .from('comment_reactions')
-      .delete()
-      .eq('comment_id', commentId)
-      .eq('user_id', uid)
-      .eq('reaction', reaction);
-    if (error) throw error;
-  }
+  const { error } = await supabase.rpc('set_comment_reaction', { p_comment: commentId, p_reaction: on ? reaction : null });
+  if (error) throw error;
 }
 
 export async function markSolved(postId: string, commentId: string | null): Promise<void> {

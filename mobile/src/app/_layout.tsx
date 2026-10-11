@@ -11,6 +11,7 @@ import { LocationProvider } from '@/providers/LocationProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
 import { ActionSheetProvider } from '@/providers/ActionSheetProvider';
 import { PushProvider } from '@/providers/PushProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { UpdateRequiredGate } from '@/components/UpdateRequiredGate';
@@ -55,25 +56,9 @@ function RootLayout() {
                 <PushProvider>
                   <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
                   {isConfigured ? (
-                    // Modal screens (compose, location, report, community/new) register
-                    // their own `presentation: 'modal'` via `Stack.Screen.options` once
-                    // those route files exist (P3/P6/P8) — Stack.Screen for a route that
-                    // has no file yet would break the dev server, so we don't list them
-                    // here in P0/P2.
+                    // The screens and their modal options are declared in <AppStack /> below.
                     <UpdateRequiredGate>
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: colors.bg },
-                        }}
-                      >
-                        {/* Modal screens registered as their route files land (MOBILE-PLAN.md §4):
-                            compose + location (P3), community/new (P6), report (P8). */}
-                        <Stack.Screen name="compose" options={{ presentation: 'modal' }} />
-                        <Stack.Screen name="location" options={{ presentation: 'modal' }} />
-                        <Stack.Screen name="community/new" options={{ presentation: 'modal' }} />
-                        <Stack.Screen name="report" options={{ presentation: 'modal' }} />
-                      </Stack>
+                      <AppStack />
                       <UpdateBanner />
                     </UpdateRequiredGate>
                   ) : (
@@ -87,6 +72,47 @@ function RootLayout() {
       </QueryProvider>
       </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+// The app is a single static page on web (every address loads it), so each screen has to guard
+// itself. Screens that only make sense when signed in are listed here once, behind a guard:
+// a signed-out visitor who opens one of their addresses is sent back to the start ('/'), which
+// forwards to /welcome. Everything not listed stays public on purpose: welcome, sign-in/up,
+// password reset, terms/privacy/guidelines, account-deletion info, and the read-only post,
+// community and profile pages that shared links point to. (tabs), admin and accept-terms
+// also redirect by themselves; the guard below is what protects the rest.
+//
+// While the session is still being restored (loading) the guard stays open, so a notification
+// tap that opens /chat/<id> at app start is not bounced before the sign-in is known.
+function AppStack() {
+  const { session, loading } = useAuth();
+  const signedIn = loading || !!session;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Stack.Protected guard={signedIn}>
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="compose" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="location" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="community/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="chat/[id]" />
+        <Stack.Screen name="profile/edit" />
+        <Stack.Screen name="community/[slug]/edit" />
+        <Stack.Screen name="settings/index" />
+        <Stack.Screen name="settings/blocked" />
+        <Stack.Screen name="settings/feedback" />
+        <Stack.Screen name="settings/notifications" />
+        <Stack.Screen name="settings/password" />
+        <Stack.Screen name="settings/phone" />
+        <Stack.Screen name="settings/username" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 

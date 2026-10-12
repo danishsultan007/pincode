@@ -134,6 +134,11 @@ export async function updateNotificationPrefs(uid: string, prefs: NotificationPr
   if (error) throw error;
 }
 
+export async function setReadReceipts(uid: string, on: boolean): Promise<void> {
+  const { error } = await supabase.from('private_profiles').update({ read_receipts: on }).eq('id', uid);
+  if (error) throw error;
+}
+
 export type BlockedUser = Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
 
 // Two FKs point from blocks to profiles, so the embed needs the constraint

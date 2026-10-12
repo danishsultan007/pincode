@@ -198,6 +198,18 @@ export const copy = {
     deletedForEveryoneToast: 'Message deleted for everyone.',
     deletedForMeToast: 'Message deleted for you.',
     closePhoto: 'Close photo',
+    reply: 'Reply',
+    replyingTo: (name: string) => `Replying to ${name}`,
+    cancelReply: 'Cancel reply',
+    you: 'You',
+    tickSent: 'Sent',
+    tickDelivered: 'Delivered',
+    tickRead: 'Read',
+    them: 'Them',
+    quotePhoto: 'Photo',
+    quoteDeleted: 'Message deleted',
+    quoteUnavailable: 'Message unavailable',
+    originalNotLoaded: "That message isn't loaded yet. Scroll up to load older messages.",
   },
 
   profile: {
@@ -210,6 +222,8 @@ export const copy = {
 
   settings: {
     safetyNote: 'Safety messages from pincode Team are always on',
+    readReceipts: 'Read receipts',
+    readReceiptsNote: 'Turn off to hide yours and theirs',
     blockedUsers: 'Blocked users',
     guidelines: 'Guidelines',
     changePassword: 'Change password',

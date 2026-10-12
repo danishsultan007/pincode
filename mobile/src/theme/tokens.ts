@@ -45,6 +45,8 @@ const light = {
   backdrop: 'rgba(22,19,15,0.42)',
   // Logo mark only (components/ui/Logo.tsx) — distinct from `danger`.
   logoRed: '#F04438',
+  // "Read" ticks on my own (accent-coloured) chat bubbles: must stand out from the white sent/delivered ticks.
+  tickRead: '#8CF0BF',
 };
 
 export type Palette = typeof light;
@@ -80,6 +82,7 @@ const dark: Palette = {
   dangerSoft: '#2E1714',
   backdrop: 'rgba(0,0,0,0.6)',
   logoRed: '#FF5A4D',
+  tickRead: '#0636B8',
 };
 
 export const colors: Palette = scheme === 'dark' ? dark : light;

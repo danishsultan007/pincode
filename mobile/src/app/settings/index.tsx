@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, Switch, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { Screen } from '@/components/ui/Screen';
@@ -11,10 +11,10 @@ import { ListGroup } from '@/components/ui/ListGroup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { confirmAsync } from '@/lib/confirm';
-import { deleteMyAccount } from '@/api/profiles';
+import { deleteMyAccount, setReadReceipts } from '@/api/profiles';
 import { messageFor } from '@/lib/errors';
 import { copy } from '@/lib/copy';
-import { space } from '@/theme/tokens';
+import { colors, space } from '@/theme/tokens';
 import { goBack } from '@/lib/nav';
 import { currentVersion } from '@/lib/version';
 
@@ -35,7 +35,10 @@ function versionInfo(): string {
 export default function Settings() {
   const router = useRouter();
   const toast = useToast();
-  const { me, user, signOut } = useAuth();
+  const { me, user, signOut, refreshMe } = useAuth();
+  // The switch shows the new value at once and is locked while the change is saved.
+  const [receiptsOn, setReceiptsOn] = React.useState<boolean | null>(null);
+  const [receiptsSaving, setReceiptsSaving] = React.useState(false);
   // Google-only accounts have no password until they set one here.
   const providers = (user?.app_metadata?.providers as string[] | undefined) ?? [];
   const hasPassword = providers.includes('email');
@@ -105,6 +108,31 @@ export default function Settings() {
       <SectionTitle title="Privacy" />
       <ListGroup>
         <ListRow title="Notifications" chevron onPress={() => router.push('/settings/notifications')} />
+        <ListRow
+          title={copy.settings.readReceipts}
+          subtitle={copy.settings.readReceiptsNote}
+          right={
+            <Switch
+              value={receiptsOn ?? me.private.read_receipts !== false}
+              disabled={receiptsSaving}
+              onValueChange={async (v) => {
+                setReceiptsOn(v);
+                setReceiptsSaving(true);
+                try {
+                  await setReadReceipts(me.profile.id, v);
+                  await refreshMe();
+                } catch (err) {
+                  toast.show(messageFor(err));
+                } finally {
+                  setReceiptsOn(null);
+                  setReceiptsSaving(false);
+                }
+              }}
+              accessibilityLabel={copy.settings.readReceipts}
+              trackColor={{ true: colors.accent, false: colors.line }}
+            />
+          }
+        />
         <ListRow title={copy.settings.blockedUsers} chevron onPress={() => router.push('/settings/blocked')} />
       </ListGroup>
       <SectionTitle title="About" />

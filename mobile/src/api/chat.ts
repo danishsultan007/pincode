@@ -2,7 +2,7 @@
 // Chat, P5). No react-query here — see hooks/useInbox.ts.
 
 import { supabase } from '@/lib/supabase';
-import type { Conversation, ConversationRow, Message } from '@/types/models';
+import type { Conversation, ConversationReceipt, ConversationRow, Message } from '@/types/models';
 
 export type InboxBox = 'chats' | 'requests';
 
@@ -39,6 +39,25 @@ export async function respondToRequest(conversationId: string, action: 'accept' 
 export async function markConversationRead(conversationId: string): Promise<void> {
   const { error } = await supabase.rpc('mark_conversation_read', { p_conv: conversationId });
   if (error) throw error;
+}
+
+// "My app has synced my chats": the server marks the newest incoming message of each accepted
+// chat as delivered (one call, however many chats).
+export async function markChatsDelivered(): Promise<void> {
+  const { error } = await supabase.rpc('mark_chats_delivered');
+  if (error) throw error;
+}
+
+// How far the other person has got in this chat (null until their app has synced it).
+export async function getPeerReceipt(conversationId: string, otherUserId: string): Promise<ConversationReceipt | null> {
+  const { data, error } = await supabase
+    .from('conversation_receipts')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', otherUserId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as ConversationReceipt | null) ?? null;
 }
 
 export async function getConversation(id: string): Promise<Conversation | null> {
@@ -85,14 +104,35 @@ export async function listMessages(conversationId: string, before?: string | nul
   return (data as Message[] | null) ?? [];
 }
 
+// The few fields a quoted message needs, read through the normal message policies: a message the
+// viewer hid, or that was held, simply does not come back.
+export type QuotedMessage = Pick<Message, 'id' | 'sender_id' | 'body' | 'attachment_path' | 'deleted_at' | 'mod_status' | 'is_system'>;
+
+export async function getMessagesByIds(conversationId: string, ids: string[]): Promise<QuotedMessage[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, sender_id, body, attachment_path, deleted_at, mod_status, is_system')
+    .eq('conversation_id', conversationId)
+    .in('id', ids);
+  if (error) throw error;
+  return (data as QuotedMessage[] | null) ?? [];
+}
+
 export type ChatAttachment = { path: string; width: number; height: number };
 
-export async function sendMessage(conversationId: string, body: string, attachment?: ChatAttachment | null): Promise<Message> {
+export async function sendMessage(
+  conversationId: string,
+  body: string,
+  attachment?: ChatAttachment | null,
+  replyToId?: string | null
+): Promise<Message> {
   const { data, error } = await supabase
     .from('messages')
     .insert({
       conversation_id: conversationId,
       body,
+      ...(replyToId ? { reply_to_id: replyToId } : {}),
       ...(attachment
         ? { attachment_path: attachment.path, attachment_width: attachment.width, attachment_height: attachment.height }
         : {}),

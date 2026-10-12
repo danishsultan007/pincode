@@ -6,6 +6,8 @@ import { fmtTime } from '@/lib/format';
 import { copy } from '@/lib/copy';
 import { REACTIONS } from '@/lib/constants';
 import { colors, radius, space } from '@/theme/tokens';
+import { ReplyQuote, type ReplyQuoteData } from '@/components/chat/ReplyQuote';
+import { MessageTicks, tickLabel, type TickStatus } from '@/components/chat/MessageTicks';
 import type { Message } from '@/types/models';
 
 export type MessageBubbleProps = {
@@ -14,6 +16,12 @@ export type MessageBubbleProps = {
   senderName?: string;
   onOpenPhoto?: (uri: string) => void;
   myReaction?: string | null;
+  // The message this one replies to (tap it to jump to the original); highlighted briefly after a jump.
+  quote?: ReplyQuoteData | null;
+  onPressQuote?: () => void;
+  highlighted?: boolean;
+  // Sent / delivered / read ticks next to the time (my messages in an accepted direct chat only).
+  status?: TickStatus | null;
   // Long-press (or tap on the reactions): where the finger was, so the menu opens next to it.
   onLongPress?: (message: Message, point: { x: number; y: number }) => void;
 };
@@ -107,7 +115,18 @@ function AttachmentImage({
 // the "pincode Team" conversation) renders full-width, centered, no bubble
 // side. A held message (mod_status !== 'visible') still renders for its own
 // sender (RLS allows that) but shows the held placeholder instead of the body.
-export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPress, myReaction }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  mine,
+  senderName,
+  onOpenPhoto,
+  onLongPress,
+  myReaction,
+  quote,
+  onPressQuote,
+  highlighted,
+  status,
+}: MessageBubbleProps) {
   const deleted = !!message.deleted_at;
   const held = message.mod_status !== 'visible' && !deleted;
   const hasPhoto = !!message.attachment_path && !held && !deleted;
@@ -134,13 +153,16 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
   const reactionEntries = held || deleted ? [] : summarizeReactions(message.reactions);
 
   return (
-    <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
+    <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs, highlighted ? styles.rowHighlight : null]}>
       <View style={[styles.col, { alignItems: mine ? 'flex-end' : 'flex-start' }]}>
       <Pressable
         onLongPress={openMenu}
         delayLongPress={350}
         style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs, hasPhoto ? styles.bubbleWithPhoto : null]}
       >
+        {quote && !held && !deleted ? (
+          <ReplyQuote data={quote} variant={mine ? 'mine' : 'theirs'} onPress={onPressQuote} onLongPress={openMenu} />
+        ) : null}
         {hasPhoto ? <AttachmentImage
             message={message}
             mine={mine}
@@ -159,9 +181,18 @@ export function MessageBubble({ message, mine, senderName, onOpenPhoto, onLongPr
             {deleted ? copy.chat.messageDeleted : held ? copy.chat.heldForReview : message.body}
           </Text>
         ) : null}
-        <Text variant="meta" style={mine ? styles.timeMine : styles.time}>
-          {fmtTime(message.created_at)}
-        </Text>
+        {status && mine && !held && !deleted ? (
+          <View style={styles.timeRow} accessible accessibilityLabel={`${fmtTime(message.created_at)}, ${tickLabel(status)}`}>
+            <Text variant="meta" style={styles.timeMine}>
+              {fmtTime(message.created_at)}
+            </Text>
+            <MessageTicks status={status} />
+          </View>
+        ) : (
+          <Text variant="meta" style={mine ? styles.timeMine : styles.time}>
+            {fmtTime(message.created_at)}
+          </Text>
+        )}
       </Pressable>
       {reactionEntries.length ? (
         <Pressable
@@ -190,6 +221,7 @@ const styles = StyleSheet.create({
   photoGone: { alignItems: 'center', justifyContent: 'center', padding: space.s3 },
   row: { flexDirection: 'row', paddingHorizontal: space.s3, paddingVertical: 2 },
   rowMine: { justifyContent: 'flex-end' },
+  rowHighlight: { backgroundColor: colors.accentSoft, borderRadius: radius.md },
   rowTheirs: { justifyContent: 'flex-start' },
   col: { maxWidth: '80%' },
   reactPill: {
@@ -216,6 +248,7 @@ const styles = StyleSheet.create({
   },
   textMine: { color: colors.accentInk },
   timeMine: { alignSelf: 'flex-end', color: colors.accentInk, opacity: 0.72 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: 4 },
   time: { alignSelf: 'flex-end', color: colors.ink3 },
   heldText: { color: colors.ink3, fontStyle: 'italic' },
   heldMine: { color: colors.accentInk, opacity: 0.8, fontStyle: 'italic' },

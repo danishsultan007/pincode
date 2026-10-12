@@ -97,6 +97,8 @@ export type PrivateProfile = {
   phone_e164: string | null;
   phone_verified: boolean;
   notification_prefs: NotificationPrefs;
+  // Send (and see) read receipts in chats; off = only "delivered" ticks. Server default is on.
+  read_receipts?: boolean;
   terms_accepted_at: ISODateString | null;
   terms_version: string | null;
   created_at: ISODateString;
@@ -350,6 +352,14 @@ export type ConversationRow = Conversation & {
   muted: boolean;
 };
 
+// How far the OTHER person has got in a chat: newest message their app has synced / they have opened.
+export type ConversationReceipt = {
+  conversation_id: UUID;
+  user_id: UUID;
+  delivered_at: ISODateString | null;
+  read_at: ISODateString | null;
+};
+
 export type Message = {
   id: UUID;
   conversation_id: UUID;
@@ -365,6 +375,8 @@ export type Message = {
   deleted_at?: ISODateString | null;
   // { "<user id>": "<reaction code>" }: one reaction per person (see set_message_reaction)
   reactions?: Record<string, string> | null;
+  // The message this one replies to (resolved on screen; see useQuotedMessages)
+  reply_to_id?: UUID | null;
 };
 
 // ---------------------------------------------------------------------------

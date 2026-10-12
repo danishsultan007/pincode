@@ -35,15 +35,22 @@ Notifications.setNotificationHandler({
 
 // Clears notifications already sitting in the shade for a conversation, called when the
 // user opens that chat (they have now seen the messages).
-export async function dismissNotificationsForChat(conversationId: string): Promise<void> {
+//
+// A push that arrived while the app was closed or in the background is shown by Android itself
+// and reaches us WITHOUT its data (no conversation id), only its title and text. The title is the
+// sender's name, so `titles` (the names this chat's pushes use) is the fallback for those.
+export async function dismissNotificationsForChat(conversationId: string, titles: string[] = []): Promise<void> {
   if (Platform.OS === 'web') return;
   try {
+    const wanted = titles.filter(Boolean);
     const presented = await Notifications.getPresentedNotificationsAsync();
     await Promise.all(
       presented
         .filter((n) => {
           const d = n.request.content.data as { conversationId?: string; url?: string } | undefined;
-          return d?.conversationId === conversationId || d?.url === `/chat/${conversationId}`;
+          if (d?.conversationId || d?.url) return d.conversationId === conversationId || d.url === `/chat/${conversationId}`;
+          const title = n.request.content.title;
+          return !!title && wanted.includes(title);
         })
         .map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
     );

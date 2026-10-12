@@ -190,7 +190,7 @@ Project refs are not secrets; they appear in URLs and in `_headers`. The region 
 | Posts and comments | `posts`, `comments`, `post_votes`, `post_reactions`, `comment_votes`, `comment_reactions`, `alert_confirmations`; views `post_cards`, `comment_cards` | `posts_near`, `mark_solved`, `delete_comment`, `reveal_post_phone` |
 | Reputation | `reputation_events`, `badges`, `user_badges` | `award_rep`, `revoke_rep`, `award_badge` (internal) |
 | Notifications and push | `notifications`, `push_tokens` | `notify`, `send_push`, `register_push_token`, `mark_all_notifications_read` |
-| Messaging | `conversations`, `conversation_members`, `messages`, `message_hides` | `start_conversation`, `respond_to_request`, `mark_conversation_read`, `list_conversations`, `inbox_counts`, `hide_message`, `delete_message_for_everyone`, `can_attach` |
+| Messaging | `conversations`, `conversation_members` (readable by its own user only), `messages` (incl. `reply_to_id`, `reactions`), `message_hides`, `conversation_receipts` | `start_conversation`, `respond_to_request`, `mark_conversation_read`, `mark_chats_delivered`, `list_conversations`, `inbox_counts`, `hide_message`, `delete_message_for_everyone`, `set_message_reaction`, `can_attach` |
 | Communities | `communities`, `community_members`, `community_bans`; view `community_cards` | `create_community`, `update_community`, `can_create_community`, `slug_available`, `set_community_role`, `remove_community_member`, `unban_community_member`, `mod_set_post_removed`, `communities_near` |
 | Search | (uses the tables above) | `search_posts`, `search_users` |
 | Moderation | `filter_terms`, `reports`, `moderation_queue`, `strikes`, `moderation_actions` | `submit_report`, `admin_resolve_item`, `admin_issue_strike`, `admin_lift_ban`, `admin_remove_content`, `admin_test_filter` |
@@ -232,10 +232,10 @@ Triggers are named `tNN_...`, and the number sets their order:
 
 ### Realtime
 
-These tables are in the `supabase_realtime` publication: `messages`, `notifications`, `conversation_members`, `conversations`. The app listens on:
+These tables are in the `supabase_realtime` publication: `messages`, `notifications`, `conversation_members`, `conversations`, `conversation_receipts`. The app listens on:
 - `notif:<uid>`: new notifications. The Inbox and badge refresh and a toast shows.
 - `cm:<uid>`: changes to your chat memberships, such as unread counts and new chats.
-- `msg:<conversation>`: opened by the chat screen while it is visible.
+- `msg:<conversation>`: opened by the chat screen while it is visible (new and changed messages, plus the other person's delivered/read progress from `conversation_receipts`).
 
 Channel names get a random suffix (`uniqueChannel` in `lib/supabase.ts`) to avoid a reuse bug.
 
@@ -259,6 +259,9 @@ The secrets these functions use (service-role key, `CLEANUP_SECRET`) are stored 
 | `null_auth_checks.sql` | The null-auth bypass fixes |
 | `chat_attachments.sql` | Photo upload and read rules |
 | `delete_messages.sql` | Delete for me / for everyone |
+| `message_reactions.sql`, `single_reaction.sql` | One reaction per person (chat messages, posts, comments) |
+| `message_replies.sql` | Reply targets: only live messages of the same chat; no re-pointing; block and pending rules |
+| `read_receipts.sql` | Delivered/read progress, the read-receipts switch, privacy of membership rows |
 
 Each test runs in a transaction and deliberately ends with an error such as `ALL ... PASSED (rolled back)`, so nothing is left behind.
 
@@ -363,6 +366,16 @@ No AWS, Azure or GCP compute or servers (all server logic is Supabase). No custo
 3. Insert a message with `attachment_path`; the server checks the path, owner, size and that the chat is accepted.
 4. To show a photo, the app requests a **signed URL valid for 10 minutes**.
 5. Daily at 03:00 IST, GitHub Actions calls `cleanup-chat-attachments`: files older than 90 days and unused uploads older than 24 h are deleted. The chat then shows "Photo expired"; the text stays.
+
+**Replying to a message**
+- The new message stores only `reply_to_id`. `messages_prepare` rejects (`bad_reply`) a target in another chat, deleted, held or hidden by the sender; the column cannot be updated later.
+- The chat screen resolves quotes from the loaded messages (so a realtime delete-for-everyone shows at once) and fetches originals older than the loaded pages in one query (`useQuotedMessages`); both go through the normal message read policy.
+- Long-press > Reply, or on Android drag the message right (`SwipeToReply`, PanResponder, JS only; `SWIPE_REPLY` turns it off).
+
+**Ticks (sent / delivered / read)**
+- `mark_chats_delivered()` (called by the app on start, on returning to the foreground, and on a `cm:` event, debounced) records, per accepted direct chat, the newest incoming message the app has synced. `mark_conversation_read()` (opening the chat, also on returning to the foreground with it open) records read, unless the person turned read receipts off (then only `delivered_at` moves).
+- The sender's chat screen compares each of its messages' `created_at` with the other person's `conversation_receipts` row. If the sender also has receipts off, read ticks are shown as delivered.
+- Not possible: "delivered" while the other app is closed (Android shows the push itself and no app code runs).
 
 **Deleting a message**
 - *For me*: `hide_message` adds a row to `message_hides`; the read policy hides it for you only.

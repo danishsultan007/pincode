@@ -37,6 +37,7 @@ export type ErrorKey =
   | 'attachments_need_accept'
   | 'attachments_unavailable'
   | 'bad_attachment'
+  | 'bad_reply'
   | 'attachment_too_large'
   | 'photo_too_large'
   | 'content_blocked'
@@ -88,6 +89,7 @@ const MESSAGES: Record<ErrorKey, string> = {
   attachments_need_accept: 'Photos can be sent once they accept your request.',
   attachments_unavailable: "Photos can't be sent in this chat right now. Try again later.",
   bad_attachment: "That photo couldn't be sent. Try another one.",
+  bad_reply: "That message can't be replied to any more.",
   attachment_too_large: 'That photo is too large. Try a smaller one.',
   photo_too_large: 'That photo is too large (over 3 MB). Try a smaller one or crop it.',
   content_blocked: "This contains language that isn't allowed on pincode.",

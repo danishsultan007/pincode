@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { markChatsDelivered } from '@/api/chat';
 import { router } from 'expo-router';
 import { supabase, uniqueChannel } from '@/lib/supabase';
 import { currentOpenChatId } from '@/lib/push';
@@ -20,6 +22,30 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const toast = useToast();
   const toastRef = useRef(toast);
   toastRef.current = toast;
+
+  // "Delivered" ticks for the people writing to me: tell the server this app has synced my chats.
+  // Debounced, and only while the app is in the foreground (nothing runs in the background).
+  const deliverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markDelivered = useRef(() => {});
+  markDelivered.current = () => {
+    if (!uid || AppState.currentState !== 'active') return;
+    if (deliverTimer.current) clearTimeout(deliverTimer.current);
+    deliverTimer.current = setTimeout(() => {
+      markChatsDelivered().catch(() => {});
+    }, 1500);
+  };
+
+  useEffect(() => {
+    if (!uid) return;
+    markDelivered.current();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') markDelivered.current();
+    });
+    return () => {
+      sub.remove();
+      if (deliverTimer.current) clearTimeout(deliverTimer.current);
+    };
+  }, [uid]);
 
   useEffect(() => {
     if (!uid) return;
@@ -52,6 +78,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           // A new message in a chat that isn't open: mark its cached list stale
           // (open chats refetch; closed ones refetch on next open).
           queryClient.invalidateQueries({ queryKey: ['messages'] });
+          markDelivered.current();
         }
       )
       .subscribe();

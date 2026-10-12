@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as chatApi from '@/api/chat';
 import * as notificationsApi from '@/api/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import { invalidateAfter } from '@/lib/invalidate';
-import type { ConversationRow, InboxCounts, Message, NotificationRow } from '@/types/models';
+import type { ConversationReceipt, ConversationRow, InboxCounts, Message, NotificationRow } from '@/types/models';
 
 // Inbox tab + chat + notifications data (MOBILE-PLAN.md §4 Inbox tab / Chat,
 // §3 Notifications design, P5). Query keys: ['conversations', box],
@@ -99,6 +99,17 @@ export function useMessages(conversationId: string | undefined) {
   return { ...query, loadOlder };
 }
 
+// How far the other person has got in this chat; kept current by the chat screen's realtime channel.
+export function usePeerReceipt(conversationId: string | undefined, otherUserId: string | null | undefined) {
+  return useQuery<ConversationReceipt | null>({
+    queryKey: ['receipt', conversationId],
+    queryFn: () => chatApi.getPeerReceipt(conversationId as string, otherUserId as string),
+    enabled: !!conversationId && !!otherUserId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+}
+
 // Signed link for a private chat photo. Links last 10 minutes, so cache for 8; the bubble refetches when an image fails to load. A missing file
 // (expired by the retention job) resolves to an error, shown as "Photo expired".
 export function useAttachmentUrl(path: string | null | undefined) {
@@ -126,8 +137,15 @@ export function useMarkConversationRead(conversationId: string | undefined) {
 export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ body, attachment }: { body: string; attachment?: chatApi.ChatAttachment | null }) =>
-      chatApi.sendMessage(conversationId, body, attachment),
+    mutationFn: ({
+      body,
+      attachment,
+      replyToId,
+    }: {
+      body: string;
+      attachment?: chatApi.ChatAttachment | null;
+      replyToId?: string | null;
+    }) => chatApi.sendMessage(conversationId, body, attachment, replyToId),
     onSuccess: (message) => {
       queryClient.setQueryData<Message[]>(['messages', conversationId], (prev) =>
         prev && prev.some((m) => m.id === message.id) ? prev : [message, ...(prev ?? [])]
@@ -136,6 +154,29 @@ export function useSendMessage(conversationId: string) {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
+}
+
+// The messages that replies in this chat point to. Anything already loaded is used as is (so a
+// delete-for-everyone arriving over Realtime shows in the quote at once); originals that are not
+// loaded (older than the loaded pages) are fetched together in one small query.
+export function useQuotedMessages(conversationId: string | undefined, messages: Message[] | undefined) {
+  const loaded = new Map<string, chatApi.QuotedMessage>();
+  for (const m of messages ?? []) loaded.set(m.id, m);
+  const missing = Array.from(
+    new Set((messages ?? []).map((m) => m.reply_to_id).filter((x): x is string => !!x && !loaded.has(x)))
+  ).sort();
+  const fetched = useQuery<chatApi.QuotedMessage[]>({
+    queryKey: ['message-quotes', conversationId, missing],
+    queryFn: () => chatApi.getMessagesByIds(conversationId as string, missing),
+    enabled: !!conversationId && missing.length > 0,
+    staleTime: 60 * 1000,
+    // a new set of ids (another reply, older pages loaded) must not blank quotes already shown
+    placeholderData: keepPreviousData,
+  });
+  const map = new Map(loaded);
+  for (const q of fetched.data ?? []) if (!map.has(q.id)) map.set(q.id, q);
+  // missing ids that came back empty are "unavailable"; ids still loading are not resolved yet
+  return { quotes: map, resolved: (id: string) => map.has(id) || (fetched.isFetched && !fetched.isError && !fetched.isPlaceholderData) };
 }
 
 // React to a chat message (one reaction per person). The cache is updated right away; the server

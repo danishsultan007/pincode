@@ -19,6 +19,8 @@ export type CommentComposerProps = {
   onAttach?: () => void;
   attachment?: { previewUri: string; sending: boolean } | null;
   onRemoveAttachment?: () => void;
+  // Chat only: the "replying to" bar shown above the input.
+  replyPreview?: React.ReactNode;
 };
 
 // Sticky bottom composer for the post detail and thread screens
@@ -35,9 +37,11 @@ export function CommentComposer({
   onAttach,
   attachment,
   onRemoveAttachment,
+  replyPreview,
 }: CommentComposerProps) {
   return (
     <View style={styles.wrap}>
+      {replyPreview ?? null}
       {attachment ? (
         <View style={styles.previewRow}>
           <View style={styles.previewBox}>

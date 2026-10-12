@@ -35,8 +35,11 @@ export function SwipeToReply({
   const pan = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_e, g) =>
-          g.dx > 12 && Math.abs(g.dx) > 2 * Math.abs(g.dy) && g.x0 > EDGE && g.x0 < widthRef.current - EDGE,
+        // (g.x0 is only filled in once the gesture is ours, so the start position is worked out from the touch)
+        onMoveShouldSetPanResponder: (e, g) => {
+          const startX = e.nativeEvent.pageX - g.dx;
+          return g.dx > 12 && Math.abs(g.dx) > 2 * Math.abs(g.dy) && startX > EDGE && startX < widthRef.current - EDGE;
+        },
         onPanResponderGrant: () => {
           fired.current = false;
         },

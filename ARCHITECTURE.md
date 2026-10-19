@@ -324,7 +324,7 @@ Each test runs in a transaction and deliberately ends with an error such as `ALL
 | Tool | Use | Notes |
 |---|---|---|
 | npm registry | all packages | `package-lock.json`. Cloudflare must use `npm install`, not `npm ci` (npm 10 vs 11 lockfile issue). `overrides` pins `react-native-worklets` 0.13.0. |
-| Node.js / npm | runs Expo tools | local Node 24.19.0, npm 11.17.0. Cloudflare uses `NODE_VERSION=22`. Minimum 20.19.4. |
+| Node.js / npm | runs Expo tools | local Node 24.19.0, npm 11.17.0. Cloudflare uses `NODE_VERSION=22`. Minimum 22 (the Supabase client requires it). |
 | Google Fonts package | Plus Jakarta Sans files bundled into the app | `@expo-google-fonts/plus-jakarta-sans`; nothing is loaded from Google at runtime (the CSP allows only `font-src 'self'`) |
 | Docker image `postgres:17` | `pg_dump` inside the backup job (on GitHub's runner) | `.github/workflows/backup.yml` |
 | GPG | AES-256 encryption of the backup dump | on the runner; also installed locally (`gnupg`) for decrypting |

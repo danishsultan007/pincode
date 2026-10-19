@@ -7,7 +7,7 @@ env vars, Google OAuth).
 
 ## Requirements
 
-- Node.js 20.19.4+ (Node 24 is fine).
+- Node.js 22+ (Node 24 recommended).
 - A Supabase project with the SQL in `../supabase` applied (see `../supabase/README.md`).
 
 ## Getting started

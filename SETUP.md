@@ -4,7 +4,7 @@ Step-by-step setup for a Windows machine with no prior Supabase/Expo experience.
 Follow the steps in order. Each step says what "it worked" looks like.
 
 Node.js is already installed (this guide assumes Node 24 — check with `node -v`
-in a fresh PowerShell window; anything ≥ 20.19.4 works).
+in a fresh PowerShell window; Node 22 or newer works).
 
 Everywhere below that says **PowerShell**, you can use the same PowerShell window
 you already have open, unless a step says to reopen it.
